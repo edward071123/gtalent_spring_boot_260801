@@ -1,9 +1,11 @@
 package student.ed.gtalent_spring_boot_260801.controller;
 
+import student.ed.gtalent_spring_boot_260801.constant.ResponseMessages;
 import student.ed.gtalent_spring_boot_260801.entity.Book;
 import student.ed.gtalent_spring_boot_260801.repository.BookRepository;
 
 import student.ed.gtalent_spring_boot_260801.request.BookCreateRequest;
+import student.ed.gtalent_spring_boot_260801.response.ApiResponse;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -34,9 +36,10 @@ public class BookController {
     // 新增一本書籍
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Book create(@Valid @RequestBody BookCreateRequest request) {
+    public ApiResponse create(@Valid @RequestBody BookCreateRequest request) {
         Book book = new Book(request.getName(), request.getPrice());
-        return repository.create(book);
+        repository.create(book);
+        return new ApiResponse("新增書籍成功");
     }
 }
 
