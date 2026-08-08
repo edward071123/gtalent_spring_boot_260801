@@ -24,6 +24,8 @@ public final class ResponseMessages {
     public static final String HTTP_REQUEST_FAILED      = "30000";
     public static final String METHOD_NOT_ALLOWED       = "30001"; // HTTP method 不支援。
     public static final String NOT_FOUND                = "30002"; // API 路徑不存在。
+
+    public static final String BOOK_NOT_FOUND           = "40001"; // 找不到書籍。
     
 
     private static final Map<String, String> ZH_TW_MESSAGES = createZhTwMessages();
@@ -41,6 +43,7 @@ public final class ResponseMessages {
         messages.put(HTTP_REQUEST_FAILED,   "HTTP 其他相關的錯誤");
         messages.put(METHOD_NOT_ALLOWED,    "HTTP 方法不支援");
         messages.put(NOT_FOUND,             "找不到 API");
+        messages.put(BOOK_NOT_FOUND,        "找不到書籍");
         return messages;
     }
 
