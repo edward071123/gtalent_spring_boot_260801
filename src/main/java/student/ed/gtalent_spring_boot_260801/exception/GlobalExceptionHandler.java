@@ -80,5 +80,18 @@ public class GlobalExceptionHandler {
         return new ApiResponse(ResponseMessages.getMessage(ResponseMessages.HTTP_REQUEST_FAILED));
     }
 
+    // 處理查不到指定資料，例如 GET /books/999 或 PUT /books/999。
+    @ExceptionHandler(ResourceNotFoundException.class)
+    // API 路徑存在，但是 request 指定的資料不存在，所以這裡依專案規則回 400。
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiResponse handleResourceNotFoundException(ResourceNotFoundException exception) {
+        Map<String, String> errors = new TreeMap<>();
+        errors.put(exception.getErrorKey(), ResponseMessages.getMessage(exception.getMessageCode()));
+
+        String message = ResponseMessages.getMessage(ResponseMessages.RESOURCE_NOT_FOUND);
+        return new ApiResponse(message, errors);
+    }
+
+
 }
 

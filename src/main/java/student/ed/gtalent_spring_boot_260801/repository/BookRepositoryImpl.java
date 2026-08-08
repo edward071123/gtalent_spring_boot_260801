@@ -6,6 +6,8 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import student.ed.gtalent_spring_boot_260801.constant.ResponseMessages;
 import student.ed.gtalent_spring_boot_260801.entity.Book;
+import student.ed.gtalent_spring_boot_260801.exception.ResourceNotFoundException;
+
 import org.springframework.stereotype.Repository;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.TransactionStatus;
@@ -76,10 +78,7 @@ public class BookRepositoryImpl implements BookRepository {
             // 先查詢資料庫中是否存在該書籍，如果不存在，則拋出例外。
             Book existingBook = entityManager.find(Book.class, id);
             if (existingBook == null) {
-                throw new DataIntegrityViolationException(
-                        ResponseMessages.getMessage(ResponseMessages.BOOK_NOT_FOUND),
-                        new RuntimeException("Book not found")
-                );
+                throw new ResourceNotFoundException("book", ResponseMessages.BOOK_NOT_FOUND);
             }
 
             existingBook.setName(book.getName());
@@ -87,6 +86,12 @@ public class BookRepositoryImpl implements BookRepository {
             // 交易成功 所以用commit 提交交易，將資料寫入資料庫。
             transactionManager.commit(status);
             return book;
+        } catch (ResourceNotFoundException exception) {
+            // 失敗 rollback：只要 update 過程出錯，就把這次 transaction 做過的資料庫操作取消。
+            transactionManager.rollback(status);
+
+            // 查不到資料不是資料庫寫入失敗，所以原樣丟出去，讓 GlobalExceptionHandler 回 400。
+            throw exception;
         } catch (RuntimeException exception) {
             // 失敗 rollback：只要 create 過程出錯，就把這次 transaction 做過的資料庫操作取消。
             transactionManager.rollback(status);
