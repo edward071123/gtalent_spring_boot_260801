@@ -24,6 +24,7 @@ public final class ResponseMessages {
     public static final String HTTP_REQUEST_FAILED      = "30000";
     public static final String METHOD_NOT_ALLOWED       = "30001"; // HTTP method 不支援。
     public static final String NOT_FOUND                = "30002"; // API 路徑不存在。
+    public static final String RESOURCE_NOT_FOUND       = "30003"; // 資料不存在。
 
     public static final String BOOK_NOT_FOUND           = "40001"; // 找不到書籍。
     
