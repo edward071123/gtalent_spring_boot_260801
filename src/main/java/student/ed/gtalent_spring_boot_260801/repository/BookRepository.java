@@ -12,4 +12,7 @@ public interface BookRepository {
     // 新增一本書籍
     public Book create(Book book);
 
+    // 修改一本書籍
+    public Book update(Long id,Book book);
+
 }

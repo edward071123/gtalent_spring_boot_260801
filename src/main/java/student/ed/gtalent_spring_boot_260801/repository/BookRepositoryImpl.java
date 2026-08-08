@@ -66,4 +66,36 @@ public class BookRepositoryImpl implements BookRepository {
         }
         
     }
+
+    @Override
+    public Book update(Long id, Book book) {
+        // 確保交易能夠成功 => 如果新增書籍失敗，會回滾交易，避免資料庫出現不一致的狀態。   
+        TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
+
+        try {
+            // 先查詢資料庫中是否存在該書籍，如果不存在，則拋出例外。
+            Book existingBook = entityManager.find(Book.class, id);
+            if (existingBook == null) {
+                throw new DataIntegrityViolationException(
+                        ResponseMessages.getMessage(ResponseMessages.BOOK_NOT_FOUND),
+                        new RuntimeException("Book not found")
+                );
+            }
+
+            existingBook.setName(book.getName());
+            existingBook.setPrice(book.getPrice());
+            // 交易成功 所以用commit 提交交易，將資料寫入資料庫。
+            transactionManager.commit(status);
+            return book;
+        } catch (RuntimeException exception) {
+            // 失敗 rollback：只要 create 過程出錯，就把這次 transaction 做過的資料庫操作取消。
+            transactionManager.rollback(status);
+
+            // 統一丟資料寫入失敗，讓 GlobalExceptionHandler 判斷資料庫細項錯誤。
+            throw new DataIntegrityViolationException(
+                    ResponseMessages.getMessage(ResponseMessages.DATABASE_WRITE_FAILED),
+                    exception
+            );
+        }
+    }
 }
