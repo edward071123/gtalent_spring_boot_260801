@@ -45,6 +45,7 @@ public final class ResponseMessages {
         messages.put(METHOD_NOT_ALLOWED,    "HTTP 方法不支援");
         messages.put(NOT_FOUND,             "找不到 API");
         messages.put(BOOK_NOT_FOUND,        "找不到書籍");
+        messages.put(RESOURCE_NOT_FOUND,    "資料不存在");
         return messages;
     }
 
