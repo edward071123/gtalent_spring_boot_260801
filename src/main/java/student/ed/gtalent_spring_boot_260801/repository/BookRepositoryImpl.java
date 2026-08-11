@@ -17,6 +17,8 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
 import java.util.ArrayList;
 import java.util.List;
 
+import java.time.LocalDateTime;
+
 @Repository
 public class BookRepositoryImpl implements BookRepository {
 
@@ -103,4 +105,41 @@ public class BookRepositoryImpl implements BookRepository {
             );
         }
     }
+
+    @Override
+    public void delete(Long id) {
+        // 確保交易能夠成功 => 如果刪除書籍失敗，會回滾交易，避免資料庫出現不一致的狀態。   
+        TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
+
+        try {
+            // 先查詢資料庫中是否存在該書籍，如果不存在，則拋出例外。
+            Book existingBook = entityManager.find(Book.class, id);
+            if (existingBook == null) {
+                throw new ResourceNotFoundException("book", ResponseMessages.BOOK_NOT_FOUND);
+            }
+
+            Byte off = 0;
+            existingBook.setStatus(off);
+            existingBook.setDeletedAt(LocalDateTime.now());
+            // 交易成功 所以用commit 提交交易，將資料寫入資料庫。
+            transactionManager.commit(status);
+        } catch (ResourceNotFoundException exception) {
+            // 失敗 rollback：只要 update 過程出錯，就把這次 transaction 做過的資料庫操作取消。
+            transactionManager.rollback(status);
+
+            // 查不到資料不是資料庫寫入失敗，所以原樣丟出去，讓 GlobalExceptionHandler 回 400。
+            throw exception;
+        } catch (RuntimeException exception) {
+            // 失敗 rollback：只要 create 過程出錯，就把這次 transaction 做過的資料庫操作取消。
+            transactionManager.rollback(status);
+
+            // 統一丟資料寫入失敗，讓 GlobalExceptionHandler 判斷資料庫細項錯誤。
+            throw new DataIntegrityViolationException(
+                    ResponseMessages.getMessage(ResponseMessages.DATABASE_WRITE_FAILED),
+                    exception
+            );
+        }
+    }
+
+    
 }
