@@ -9,6 +9,9 @@ public interface BookRepository {
     // 取得所有書籍
     public List<Book> findAll();
 
+    // 取得一本書籍by Id
+    public Book findOneById(Long id);
+
     // 新增一本書籍
     public Book create(Book book);
 

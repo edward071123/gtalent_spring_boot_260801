@@ -31,6 +31,14 @@ public class BookController {
         return repository.findAll();
     }
 
+    // 取得單一書籍By Id
+    @GetMapping("/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public Book getOneById(@PathVariable Long id) {
+        Book book = repository.findOneById(id);
+        return book;
+    }
+
 
     // 新增一本書籍
     @PostMapping
