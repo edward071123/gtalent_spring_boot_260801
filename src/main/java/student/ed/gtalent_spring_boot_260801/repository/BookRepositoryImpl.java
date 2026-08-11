@@ -61,6 +61,18 @@ public class BookRepositoryImpl implements BookRepository {
         return (Book) queryResult;
     }
 
+     @Override
+    public Book findOneByName(String name) {
+        // 1代表存在, 所以要抓出status = 1
+        Object queryResult =  entityManager
+                                .createNativeQuery("SELECT * FROM books WHERE status = ? and name LIKE ?", Book.class)
+                                .setParameter(1, 1)
+                                .setParameter(2, "%" + name + "%")
+                                .getSingleResult();
+
+        return (Book) queryResult;
+    }
+
     @Override
     public Book create(Book book) {
         // 確保交易能夠成功 => 如果新增書籍失敗，會回滾交易，避免資料庫出現不一致的狀態。   

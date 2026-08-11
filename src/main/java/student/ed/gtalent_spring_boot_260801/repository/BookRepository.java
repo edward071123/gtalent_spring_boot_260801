@@ -12,6 +12,9 @@ public interface BookRepository {
     // 取得一本書籍by Id
     public Book findOneById(Long id);
 
+    // 取得一本書籍by Name
+    public Book findOneByName(String name);
+
     // 新增一本書籍
     public Book create(Book book);
 
