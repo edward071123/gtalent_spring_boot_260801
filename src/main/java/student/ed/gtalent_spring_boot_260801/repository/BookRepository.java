@@ -15,4 +15,7 @@ public interface BookRepository {
     // 修改一本書籍
     public Book update(Long id,Book book);
 
+    // 軟刪除一本書籍
+    public void delete(Long id);
+
 }

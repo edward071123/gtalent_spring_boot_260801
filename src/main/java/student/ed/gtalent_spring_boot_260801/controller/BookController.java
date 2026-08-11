@@ -49,5 +49,13 @@ public class BookController {
         repository.update(id, book);
         return new ApiResponse("修改書籍成功");
     }
+
+    // 軟刪除一本書籍
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public ApiResponse delete(@PathVariable Long id) {
+        repository.delete(id);
+        return new ApiResponse("刪除書籍成功");
+    }
 }
 
