@@ -5,6 +5,8 @@ import student.ed.gtalent_spring_boot_260801.repository.BookRepository;
 
 import student.ed.gtalent_spring_boot_260801.request.BookCreateRequest;
 import student.ed.gtalent_spring_boot_260801.response.ApiResponse;
+import student.ed.gtalent_spring_boot_260801.response.BookResponse;
+import student.ed.gtalent_spring_boot_260801.response.PageResponse;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -27,24 +29,52 @@ public class BookController {
     // 取得所有的書籍
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public List<Book> getAll() {
-        return repository.findAll();
+    public PageResponse<BookResponse> getAll(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        if (page < 1) {
+            page = 1;
+        }
+
+        if (size < 1) {
+            size = 10;
+        }
+
+        if (size > 100) {
+            size = 100;
+        }
+
+        // 先依照 page、size 從資料庫查出這一頁的書籍資料。
+        // 這裡拿到的是 Book Entity，代表資料庫中的完整資料，
+        // 所以 Book 裡面仍然會有 status、deletedAt 這類只給後端使用的欄位。
+        List<Book> books = repository.findAll(page, size);
+
+        // API 不直接回傳 Book Entity，避免把 status、deletedAt 暴露給前端。
+        // books.stream()：把 List<Book> 轉成串流，準備逐筆處理。
+        // map(BookResponse::new)：每一筆 Book 都執行 new BookResponse(book)，轉成只包含 id、name、price 的 DTO。
+        // toList()：把轉換後的 BookResponse 收集回 List<BookResponse>。
+        List<BookResponse> bookResponses = books.stream()
+                .map(BookResponse::new)
+                .toList();
+        long totalElements = repository.countAll();
+
+        return new PageResponse<>(bookResponses, page, size, totalElements);
     }
 
     // 取得單一書籍By Id
     @GetMapping("/searchid/{id}")
     @ResponseStatus(HttpStatus.OK)
-    public Book getOneById(@PathVariable Long id) {
+    public BookResponse getOneById(@PathVariable Long id) {
         Book book = repository.findOneById(id);
-        return book;
+        return new BookResponse(book);
     }
 
      // 取得單一書籍By Id
     @GetMapping("/searchname/{name}")
     @ResponseStatus(HttpStatus.OK)
-    public Book getOneById(@PathVariable String name) {
+    public BookResponse getOneById(@PathVariable String name) {
         Book book = repository.findOneByName(name);
-        return book;
+        return new BookResponse(book);
     }
 
 
@@ -74,4 +104,3 @@ public class BookController {
         return new ApiResponse("刪除書籍成功");
     }
 }
-

@@ -75,4 +75,3 @@ public class Book {
         this.deletedAt = deletedAt;
     }
 }
-

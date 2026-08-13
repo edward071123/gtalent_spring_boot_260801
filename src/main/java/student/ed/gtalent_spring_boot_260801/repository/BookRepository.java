@@ -9,6 +9,12 @@ public interface BookRepository {
     // 取得所有書籍
     public List<Book> findAll();
 
+    // 分頁取得所有書籍
+    public List<Book> findAll(int page, int size);
+
+    // 取得書籍總筆數
+    public long countAll();
+
     // 取得一本書籍by Id
     public Book findOneById(Long id);
 

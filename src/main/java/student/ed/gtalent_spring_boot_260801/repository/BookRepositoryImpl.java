@@ -37,7 +37,7 @@ public class BookRepositoryImpl implements BookRepository {
     public List<Book> findAll() {
         // 1代表存在, 所以要抓出status = 1
         List<?> queryResults =  entityManager
-                                .createNativeQuery("SELECT * FROM books WHERE status = ?", Book.class)
+                                .createNativeQuery("SELECT * FROM books WHERE status = ? ORDER BY id", Book.class)
                                 .setParameter(1, 1)
                                 .getResultList();
 
@@ -47,6 +47,36 @@ public class BookRepositoryImpl implements BookRepository {
         }
 
         return books;
+    }
+
+    @Override
+    public List<Book> findAll(int page, int size) {
+        int offset = (page - 1) * size;
+
+        // 1代表存在, 所以要抓出status = 1
+        List<?> queryResults =  entityManager
+                                .createNativeQuery("SELECT * FROM books WHERE status = ? ORDER BY id", Book.class)
+                                .setParameter(1, 1)
+                                .setFirstResult(offset)
+                                .setMaxResults(size)
+                                .getResultList();
+
+        List<Book> books = new ArrayList<>();
+        for(Object obj : queryResults) {
+            books.add((Book) obj);
+        }
+
+        return books;
+    }
+
+    @Override
+    public long countAll() {
+        Object queryResult = entityManager
+                                .createNativeQuery("SELECT COUNT(*) FROM books WHERE status = ?")
+                                .setParameter(1, 1)
+                                .getSingleResult();
+
+        return ((Number) queryResult).longValue();
     }
 
     @Override
