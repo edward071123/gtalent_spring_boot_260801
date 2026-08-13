@@ -7,13 +7,16 @@ import java.util.List;
 public interface BookRepository {
 
     // 取得所有書籍
-    public List<Book> findAll();
+    public List<Book> findAll(int page, int size);
 
     // 取得一本書籍by Id
     public Book findOneById(Long id);
 
     // 取得一本書籍by Name
     public List<Book> findOneByName(String name);
+
+    // 取得書籍總筆數
+    public long countAll();
 
     // 新增一本書籍
     public Book create(Book book);
