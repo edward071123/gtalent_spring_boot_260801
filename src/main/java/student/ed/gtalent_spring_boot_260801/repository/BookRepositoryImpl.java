@@ -61,17 +61,35 @@ public class BookRepositoryImpl implements BookRepository {
         return (Book) queryResult;
     }
 
-     @Override
-    public Book findOneByName(String name) {
+    @Override
+    public List<Book> findOneByName(String name) {
         // 1代表存在, 所以要抓出status = 1
-        Object queryResult =  entityManager
-                                .createNativeQuery("SELECT * FROM books WHERE status = ? and name LIKE ?", Book.class)
+        // SELECT * FROM books WHERE status = ? and name like '%?%';
+        List<?> queryResults =  entityManager
+                                .createNativeQuery("SELECT * FROM books WHERE status = ? and name like ?", Book.class)
                                 .setParameter(1, 1)
                                 .setParameter(2, "%" + name + "%")
-                                .getSingleResult();
+                                .getResultList();
 
-        return (Book) queryResult;
+        List<Book> books = new ArrayList<>();                        
+        for(Object obj : queryResults) {
+            books.add((Book) obj);
+        }
+
+        return books;
     }
+
+    //  @Override
+    // public Book findOneByName(String name) {
+    //     // 1代表存在, 所以要抓出status = 1
+    //     Object queryResult =  entityManager
+    //                             .createNativeQuery("SELECT * FROM books WHERE status = ? and name LIKE ?", Book.class)
+    //                             .setParameter(1, 1)
+    //                             .setParameter(2, "%" + name + "%")
+    //                             .getSingleResult();
+
+    //     return (Book) queryResult;
+    // }
 
     @Override
     public Book create(Book book) {
