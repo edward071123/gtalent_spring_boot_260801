@@ -32,19 +32,18 @@ public class BookController {
     }
 
     // 取得單一書籍By Id
-    @GetMapping("/searchid/{id}")
+    @GetMapping("/search-id/{id}")
     @ResponseStatus(HttpStatus.OK)
     public Book getOneById(@PathVariable Long id) {
         Book book = repository.findOneById(id);
         return book;
     }
 
-     // 取得單一書籍By Id
-    @GetMapping("/searchname/{name}")
+    // 取得單一書籍By Name
+    @GetMapping("search-name/{name}")
     @ResponseStatus(HttpStatus.OK)
-    public Book getOneById(@PathVariable String name) {
-        Book book = repository.findOneByName(name);
-        return book;
+    public List<Book> getOneByName(@PathVariable String name) {
+        return repository.findOneByName(name);
     }
 
 
