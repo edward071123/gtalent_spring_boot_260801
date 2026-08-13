@@ -34,11 +34,15 @@ public class BookRepositoryImpl implements BookRepository {
     }
 
     @Override
-    public List<Book> findAll() {
+    public List<Book> findAll(int page, int size) {
+        int offset = (page - 1) * size;
+
         // 1代表存在, 所以要抓出status = 1
         List<?> queryResults =  entityManager
-                                .createNativeQuery("SELECT * FROM books WHERE status = ?", Book.class)
+                                .createNativeQuery("SELECT * FROM books WHERE status = ? ORDER BY id ASC", Book.class)
                                 .setParameter(1, 1)
+                                .setFirstResult(offset)
+                                .setMaxResults(size)
                                 .getResultList();
 
         List<Book> books = new ArrayList<>();                        
@@ -79,17 +83,15 @@ public class BookRepositoryImpl implements BookRepository {
         return books;
     }
 
-    //  @Override
-    // public Book findOneByName(String name) {
-    //     // 1代表存在, 所以要抓出status = 1
-    //     Object queryResult =  entityManager
-    //                             .createNativeQuery("SELECT * FROM books WHERE status = ? and name LIKE ?", Book.class)
-    //                             .setParameter(1, 1)
-    //                             .setParameter(2, "%" + name + "%")
-    //                             .getSingleResult();
-
-    //     return (Book) queryResult;
-    // }
+    @Override
+    public long countAll() {
+        Object queryResult =  entityManager
+                                .createNativeQuery("SELECT COUNT(*) FROM books WHERE status = ?")
+                                .setParameter(1, 1)
+                                .getSingleResult();
+        // 轉成long (因為取得的是Object, 所以必須要用Class型別去接:Number, int是基本的型別:無法承接Object)
+        return ((Number) queryResult).longValue();
+    }
 
     @Override
     public Book create(Book book) {
