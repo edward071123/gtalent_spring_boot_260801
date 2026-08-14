@@ -1,9 +1,13 @@
 package student.ed.gtalent_spring_boot_260801.controller;
 
 
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
+import student.ed.gtalent_spring_boot_260801.request.MailSendRequest;
+import student.ed.gtalent_spring_boot_260801.response.ApiResponse;
 import student.ed.gtalent_spring_boot_260801.service.MailService;
 
 @RestController
@@ -14,10 +18,10 @@ public class MailController {
         this.mailService = mailService;
     }
 
-    @GetMapping("/mail/test")
-    public String sendEmail() {
-        mailService.sendEmail("leonardo071123@gmail.com", "Test Java Gmail", "Edward Test Message");
-        return "Email sent successfully!";
+    @PostMapping("/send/gmail")
+    public ApiResponse sendEmail(@Valid @RequestBody MailSendRequest request) {
+        mailService.sendEmail(request.getToMailAddress(), request.getSubject(), request.getContent());
+        return new ApiResponse("寄送Gmail成功");
     }
 
     // 練習1: 改成帶入 to、subject、text 參數 可用post or get

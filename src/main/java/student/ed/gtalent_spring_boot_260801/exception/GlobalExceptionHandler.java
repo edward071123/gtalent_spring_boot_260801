@@ -5,6 +5,7 @@ import student.ed.gtalent_spring_boot_260801.response.ApiResponse;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.mail.MailException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -93,5 +94,11 @@ public class GlobalExceptionHandler {
     }
 
 
-}
+    // 處理寄信失敗，例如 SMTP 設定錯誤、帳密錯誤或 mail server 連線失敗。
+    @ExceptionHandler(MailException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiResponse handleMailException(MailException exception) {
+        return new ApiResponse(ResponseMessages.getMessage(ResponseMessages.MAIL_SEND_FAILED));
+    }
 
+}
