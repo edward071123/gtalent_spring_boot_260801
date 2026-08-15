@@ -62,6 +62,13 @@ public class GlobalExceptionHandler {
         return new ApiResponse(message, exception.getErrors());
     }
 
+    // 處理業務規則錯誤，例如帳號已存在、帳號密碼錯誤、token 無效。
+    @ExceptionHandler(BusinessException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiResponse handleBusinessException(BusinessException exception) {
+        return new ApiResponse(ResponseMessages.getMessage(exception.getMessageCode()));
+    }
+
     // 處理資料庫 constraint 或寫入失敗，這類已進到資料層的錯誤回傳 400。
     // 例如 repository.save(book) 時違反資料庫限制，Spring 可能會丟 DataIntegrityViolationException。
     @ExceptionHandler(DataIntegrityViolationException.class)
