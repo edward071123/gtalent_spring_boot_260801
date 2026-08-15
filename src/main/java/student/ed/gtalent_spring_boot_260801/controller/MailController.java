@@ -24,7 +24,7 @@ public class MailController {
         return new ApiResponse("寄送Gmail成功");
     }
 
-    // 練習1: 改成帶入 to、subject、text 參數 可用post or get
+    // 練習1: 改成帶入 to、subject、text 參數 用post
 
     // 練習2: 新增/修改/刪除書籍 寄送gmail通知 
 }

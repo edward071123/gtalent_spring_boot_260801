@@ -8,6 +8,7 @@ import student.ed.gtalent_spring_boot_260801.request.BookCreateRequest;
 import student.ed.gtalent_spring_boot_260801.response.ApiResponse;
 import student.ed.gtalent_spring_boot_260801.response.BookResponse;
 import student.ed.gtalent_spring_boot_260801.response.PageResponse;
+import student.ed.gtalent_spring_boot_260801.service.MailService;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -21,10 +22,12 @@ import java.util.List;
 public class BookController {
 
     private final BookRepository repository;
-
+    private MailService mailService;
+    private String toMailAddress = "leonardo071123@gmail.com";
     // 注入式
-    public BookController(BookRepository repository) {
+    public BookController(BookRepository repository, MailService mailService) {
         this.repository = repository;
+        this.mailService = mailService;
     }
 
     // 取得所有的書籍
@@ -87,6 +90,7 @@ public class BookController {
     public ApiResponse create(@Valid @RequestBody BookCreateRequest request) {
         Book book = new Book(request.getName(), request.getPrice());
         repository.create(book);
+        mailService.sendEmail(this.toMailAddress, "新增書籍通知", "新增書籍成功，書名：" + request.getName() + "，價格：" + request.getPrice());
         return new ApiResponse("新增書籍成功");
     }
 
@@ -96,6 +100,7 @@ public class BookController {
     public ApiResponse update(@PathVariable Long id, @Valid @RequestBody BookCreateRequest request) {
         Book book = new Book(request.getName(), request.getPrice());
         repository.update(id, book);
+        mailService.sendEmail(this.toMailAddress, "修改書籍通知", "修改書籍成功，書名：" + request.getName() + "，價格：" + request.getPrice());
         return new ApiResponse("修改書籍成功");
     }
 
@@ -104,6 +109,7 @@ public class BookController {
     @ResponseStatus(HttpStatus.OK)
     public ApiResponse delete(@PathVariable Long id) {
         repository.delete(id);
+        mailService.sendEmail(this.toMailAddress, "刪除書籍通知", "刪除書籍成功，書id：" + id);
         return new ApiResponse("刪除書籍成功");
     }
 }
