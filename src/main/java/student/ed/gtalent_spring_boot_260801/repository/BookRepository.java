@@ -21,6 +21,9 @@ public interface BookRepository {
     // 新增一本書籍
     public Book create(Book book);
 
+    // 批次新增書籍，給 Excel 匯入大量資料使用。
+    public void batchCreate(List<Book> books);
+
     // 修改一本書籍
     public Book update(Long id,Book book);
 

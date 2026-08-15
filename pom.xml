@@ -30,11 +30,18 @@
 		<java.version>21</java.version>
 	</properties>
 	<dependencies>
+		<!-- 讀取 Excel .xlsx 檔案。匯入 10 萬筆時，會搭配 POI 的串流解析方式，避免一次把整份 Excel 載入記憶體。 -->
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi-ooxml</artifactId>
+			<version>5.5.1</version>
+		</dependency>
+
+		<!--Send Mail -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-mail</artifactId>
 		</dependency>
-
 
 		<!-- JPA API,  Hibernate, Spring ORM / transaction -->
 		<dependency>

@@ -4,10 +4,13 @@ import student.ed.gtalent_spring_boot_260801.entity.Book;
 import student.ed.gtalent_spring_boot_260801.repository.BookRepository;
 
 import student.ed.gtalent_spring_boot_260801.request.BookCreateRequest;
+import student.ed.gtalent_spring_boot_260801.request.BookExcelImportRequest;
 
 import student.ed.gtalent_spring_boot_260801.response.ApiResponse;
+import student.ed.gtalent_spring_boot_260801.response.BookImportResponse;
 import student.ed.gtalent_spring_boot_260801.response.BookResponse;
 import student.ed.gtalent_spring_boot_260801.response.PageResponse;
+import student.ed.gtalent_spring_boot_260801.service.BookExcelImportService;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -22,9 +25,12 @@ public class BookController {
 
     private final BookRepository repository;
 
+    private final BookExcelImportService bookExcelImportService;
+
     // 注入式
-    public BookController(BookRepository repository) {
+    public BookController(BookRepository repository, BookExcelImportService bookExcelImportService) {
         this.repository = repository;
+        this.bookExcelImportService = bookExcelImportService;
     }
 
     // 取得所有的書籍
@@ -90,6 +96,28 @@ public class BookController {
         return new ApiResponse("新增書籍成功");
     }
 
+    // 用 Excel 大量匯入書籍。
+    //
+    // 呼叫方式：
+    // POST /books/import/excel
+    // Content-Type: multipart/form-data
+    // file: books.xlsx
+    //
+    // Excel 格式：
+    // 第一列必須是標題列：name | price
+    // 第二列開始才是資料列，例如：Java 入門 | 500
+    //
+    // 為了適合 10 萬筆匯入，真正解析和寫入邏輯放在 BookExcelImportService：
+    // 1. Controller 只負責接收 HTTP 上傳檔案。
+    // 2. Service 負責串流讀 Excel、驗證欄位、分批送 repository。
+    // 3. Repository 用 JDBC batch insert 寫入資料庫。
+    @PostMapping("/import/excel")
+    @ResponseStatus(HttpStatus.CREATED)
+    public BookImportResponse importExcel(@Valid @ModelAttribute BookExcelImportRequest request) {
+        int importedCount = bookExcelImportService.importBooks(request.getFile());
+        return new BookImportResponse("匯入書籍成功", importedCount);
+    }
+
     // 修改一本書籍
     @PutMapping("/{id}")
     @ResponseStatus(HttpStatus.OK)
@@ -107,4 +135,3 @@ public class BookController {
         return new ApiResponse("刪除書籍成功");
     }
 }
-

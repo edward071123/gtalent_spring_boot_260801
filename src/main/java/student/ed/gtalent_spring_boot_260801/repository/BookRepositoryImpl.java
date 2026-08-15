@@ -10,10 +10,14 @@ import student.ed.gtalent_spring_boot_260801.exception.ResourceNotFoundException
 
 import org.springframework.stereotype.Repository;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,8 +33,11 @@ public class BookRepositoryImpl implements BookRepository {
 
     private final PlatformTransactionManager transactionManager;
 
-    public BookRepositoryImpl(PlatformTransactionManager transactionManager) {
+    private final JdbcTemplate jdbcTemplate;
+
+    public BookRepositoryImpl(PlatformTransactionManager transactionManager, JdbcTemplate jdbcTemplate) {
         this.transactionManager = transactionManager;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @Override
@@ -115,6 +122,62 @@ public class BookRepositoryImpl implements BookRepository {
             );
         }
         
+    }
+
+    @Override
+    public void batchCreate(List<Book> books) {
+        if (books.isEmpty()) {
+            return;
+        }
+
+        try {
+            // 大量匯入時不要呼叫 create(book) 逐筆新增。
+            //
+            // 如果 10 萬筆都走 create(book)，流程會變成：
+            // - 開 transaction
+            // - persist 一筆 Book
+            // - commit
+            // - 重複 10 萬次
+            //
+            // 這樣資料庫連線往返次數太多，效能會很差。
+            //
+            // batchUpdate 的概念是：
+            // - SQL 樣板只寫一次：INSERT INTO books (name, price) VALUES (?, ?)
+            // - 第 1 筆資料把 ? 換成第一本書的 name、price
+            // - 第 2 筆資料把 ? 換成第二本書的 name、price
+            // - 一整批資料交給 JDBC / 資料庫處理
+            //
+            // 這裡只寫入 name、price。
+            // status 欄位在 migration 裡有 DEFAULT 1，所以不用手動設定。
+            // deleted_at 是刪除時才會用到，新增時保持 null。
+            jdbcTemplate.batchUpdate(
+                    "INSERT INTO books (name, price) VALUES (?, ?)",
+                    new BatchPreparedStatementSetter() {
+
+                        @Override
+                        public void setValues(PreparedStatement ps, int i) throws SQLException {
+                            Book book = books.get(i);
+
+                            // 第一個 ? 對應 SQL 裡的 name。
+                            ps.setString(1, book.getName());
+
+                            // 第二個 ? 對應 SQL 裡的 price。
+                            ps.setInt(2, book.getPrice());
+                        }
+
+                        @Override
+                        public int getBatchSize() {
+                            // 告訴 JdbcTemplate：這一批總共有幾筆資料要寫入。
+                            return books.size();
+                        }
+                    }
+            );
+        } catch (RuntimeException exception) {
+            throw new DataIntegrityViolationException(
+                    ResponseMessages.getMessage(ResponseMessages.DATABASE_WRITE_FAILED),
+                    exception
+            );
+        }
     }
 
     @Override

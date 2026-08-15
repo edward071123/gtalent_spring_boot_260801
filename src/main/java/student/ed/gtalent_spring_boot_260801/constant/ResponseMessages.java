@@ -22,6 +22,11 @@ public final class ResponseMessages {
     public static final String MAIL_SUBJECT_MAX         = "10007"; // 信件標題超過長度限制。
     public static final String MAIL_CONTENT_REQUIRED    = "10008"; // 信件內容未填。
     public static final String MAIL_CONTENT_MAX         = "10009"; // 信件內容超過長度限制。
+    public static final String BOOK_EXCEL_FILE_REQUIRED = "10010"; // Excel 檔案未上傳。
+    public static final String BOOK_EXCEL_FILE_INVALID  = "10011"; // Excel 檔案格式錯誤。
+    public static final String BOOK_EXCEL_NO_DATA       = "10012"; // Excel 沒有可匯入資料。
+    public static final String BOOK_EXCEL_HEADER_INVALID = "10013"; // Excel 標題列錯誤。
+    public static final String BOOK_IMPORT_FAILED       = "10014"; // 書籍匯入驗證失敗。
 
     // 20000 區間：資料庫寫入相關錯誤。
     public static final String DATABASE_WRITE_FAILED    = "20000";
@@ -54,6 +59,11 @@ public final class ResponseMessages {
         messages.put(MAIL_SUBJECT_MAX,      "信件標題不可超過 60 個字");
         messages.put(MAIL_CONTENT_REQUIRED, "信件內容必填");
         messages.put(MAIL_CONTENT_MAX,      "信件內容不可超過 1000 個字");
+        messages.put(BOOK_EXCEL_FILE_REQUIRED, "請上傳 Excel 檔案");
+        messages.put(BOOK_EXCEL_FILE_INVALID,  "Excel 檔案格式錯誤，請上傳 .xlsx 檔案");
+        messages.put(BOOK_EXCEL_NO_DATA,       "Excel 沒有可匯入的書籍資料");
+        messages.put(BOOK_EXCEL_HEADER_INVALID, "Excel 第一列欄位必須是 name、price");
+        messages.put(BOOK_IMPORT_FAILED,       "書籍匯入驗證失敗");
         messages.put(DATABASE_WRITE_FAILED, "資料寫入失敗");
         messages.put(HTTP_REQUEST_FAILED,   "HTTP 其他相關的錯誤");
         messages.put(METHOD_NOT_ALLOWED,    "HTTP 方法不支援");

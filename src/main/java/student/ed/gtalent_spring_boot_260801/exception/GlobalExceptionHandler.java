@@ -6,6 +6,7 @@ import student.ed.gtalent_spring_boot_260801.response.ApiResponse;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.mail.MailException;
+import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -28,20 +29,37 @@ public class GlobalExceptionHandler {
     // request 格式正確，但是欄位內容不符合規則，所以回 422。
     @ResponseStatus(HttpStatus.UNPROCESSABLE_CONTENT)
     public ApiResponse handleValidationException(MethodArgumentNotValidException exception) {
-        // key 放欄位名稱，例如 name / price；value 放該欄位的錯誤訊息。
+        return buildValidationFailedResponse(exception.getBindingResult().getFieldErrors());
+    }
+
+    // 處理 @Valid @ModelAttribute 驗證失敗。
+    // Excel multipart 上傳是表單資料，不是 JSON body，所以會走 ModelAttribute binding。
+    @ExceptionHandler(BindException.class)
+    @ResponseStatus(HttpStatus.UNPROCESSABLE_CONTENT)
+    public ApiResponse handleBindException(BindException exception) {
+        return buildValidationFailedResponse(exception.getBindingResult().getFieldErrors());
+    }
+
+    private ApiResponse buildValidationFailedResponse(Iterable<FieldError> fieldErrors) {
         Map<String, String> errors = new TreeMap<>();
 
-        // getFieldErrors() 會取出所有欄位驗證錯誤。
-        for (FieldError error : exception.getBindingResult().getFieldErrors()) {
+        for (FieldError error : fieldErrors) {
             String fieldName = error.getField();
             String errorMessage = ResponseMessages.getMessage(error.getDefaultMessage());
 
             errors.put(fieldName, errorMessage);
         }
 
-        // message 放大項目錯誤，errors 放各欄位細項錯誤。
         String message = ResponseMessages.getMessage(ResponseMessages.VALIDATION_FAILED);
         return new ApiResponse(message, errors);
+    }
+
+    // 處理 Excel 匯入書籍時的資料錯誤，例如欄位名稱錯誤、價格不是數字、書名空白。
+    @ExceptionHandler(BookImportException.class)
+    @ResponseStatus(HttpStatus.UNPROCESSABLE_CONTENT)
+    public ApiResponse handleBookImportException(BookImportException exception) {
+        String message = ResponseMessages.getMessage(ResponseMessages.BOOK_IMPORT_FAILED);
+        return new ApiResponse(message, exception.getErrors());
     }
 
     // 處理資料庫 constraint 或寫入失敗，這類已進到資料層的錯誤回傳 400。
