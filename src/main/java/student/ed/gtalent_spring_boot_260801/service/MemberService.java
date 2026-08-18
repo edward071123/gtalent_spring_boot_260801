@@ -3,6 +3,7 @@ package student.ed.gtalent_spring_boot_260801.service;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import student.ed.gtalent_spring_boot_260801.constant.ResponseMessages;
 import student.ed.gtalent_spring_boot_260801.request.MemberRegisterRequest;
@@ -14,9 +15,11 @@ import student.ed.gtalent_spring_boot_260801.exception.MemberAccountExcption;
 public class MemberService {
 
     private MemberRepository repository;
+    private PasswordEncoder passwordEncoder;
 
-    public MemberService(MemberRepository repository) {
+    public MemberService(MemberRepository repository, PasswordEncoder passwordEncoder) {
         this.repository = repository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Transactional
@@ -27,18 +30,18 @@ public class MemberService {
         }
 
         // 驗證輸入的帳號是否已存在系統
+        // 比對帳戶存在系統的話就要跳出例外
         String account = request.getAccount();
         if (this.repository.countByAccount(account) > 0) {
             throw new MemberAccountExcption("account", ResponseMessages.MEMBER_ACCOUNT_EXISTS);
         }
-        // 比對帳戶存在系統的話就要跳出例外
-
+        
         Member member = new Member(
             request.getName(),
             request.getGender(),
             request.getAccount(),
             request.getEmail(),
-            request.getPassword()
+            this.passwordEncoder.encode(request.getPassword()) // 密碼加密
         );
 
 
