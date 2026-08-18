@@ -104,6 +104,15 @@ public class GlobalExceptionHandler {
         return new ApiResponse(message, errors);
     }
 
+    @ExceptionHandler(AuthException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ApiResponse handleAuthException(AuthException exception) {
+        Map<String, String> errors = new TreeMap<>();
+        errors.put(exception.getErrorKey(), ResponseMessages.getMessage(exception.getMessageCode()));
+
+        return new ApiResponse(ResponseMessages.getMessage(exception.getMessageCode()), errors);
+    }
+
 
     // 處理寄信失敗，例如 SMTP 設定錯誤、帳密錯誤或 mail server 連線失敗。
     @ExceptionHandler(MailException.class)

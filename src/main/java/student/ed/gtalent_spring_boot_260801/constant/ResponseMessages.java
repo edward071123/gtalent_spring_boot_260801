@@ -35,6 +35,7 @@ public final class ResponseMessages {
     public static final String MEMBER_CONFIRM_PASSWORD_REQUIRED = "10020"; // 會員確認密碼未填。
     public static final String MEMBER_CONFIRM_PASSWORD_NOT_MATCH = "10021"; // 會員確認密碼不一致。
     public static final String MEMBER_ACCOUNT_EXISTS    = "10022"; // 會員帳號已存在。
+    public static final String REFRESH_TOKEN_REQUIRED   = "10023"; // refresh token 未填。
 
     // 20000 區間：資料庫寫入相關錯誤。
     public static final String DATABASE_WRITE_FAILED    = "20000";
@@ -47,6 +48,10 @@ public final class ResponseMessages {
 
     public static final String BOOK_NOT_FOUND           = "40001"; // 找不到書籍。
     public static final String MEMBER_NOT_FOUND         = "40002"; // 找不到會員。
+    public static final String MEMBER_LOGIN_FAILED      = "40003"; // 會員登入失敗。
+    public static final String TOKEN_INVALID            = "40004"; // token 不合法。
+    public static final String TOKEN_EXPIRED            = "40005"; // token 已過期。
+    public static final String TOKEN_REQUIRED           = "40006"; // token 未填。
     
     // 50000 區間：外接第三方服務通知相關錯誤。
     public static final String MAIL_SEND_FAILED         = "50000"; // 電子郵件寄送失敗。
@@ -81,12 +86,17 @@ public final class ResponseMessages {
         messages.put(MEMBER_CONFIRM_PASSWORD_REQUIRED, "確認密碼必填");
         messages.put(MEMBER_CONFIRM_PASSWORD_NOT_MATCH, "確認密碼不一致");
         messages.put(MEMBER_ACCOUNT_EXISTS, "會員帳號已存在");
+        messages.put(REFRESH_TOKEN_REQUIRED, "refresh token 必填");
         messages.put(DATABASE_WRITE_FAILED, "資料寫入失敗");
         messages.put(HTTP_REQUEST_FAILED,   "HTTP 其他相關的錯誤");
         messages.put(METHOD_NOT_ALLOWED,    "HTTP 方法不支援");
         messages.put(NOT_FOUND,             "找不到 API");
         messages.put(BOOK_NOT_FOUND,        "找不到書籍");
         messages.put(MEMBER_NOT_FOUND,      "找不到會員");
+        messages.put(MEMBER_LOGIN_FAILED,   "帳號或密碼錯誤");
+        messages.put(TOKEN_INVALID,         "token 不合法");
+        messages.put(TOKEN_EXPIRED,         "token 已過期，請重新登入");
+        messages.put(TOKEN_REQUIRED,        "token 必填");
         messages.put(RESOURCE_NOT_FOUND,    "資料不存在");
         messages.put(MAIL_SEND_FAILED,      "電子郵件寄送失敗");
         return messages;
