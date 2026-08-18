@@ -22,6 +22,19 @@ public final class ResponseMessages {
     public static final String MAIL_SUBJECT_MAX         = "10007"; // 信件標題超過長度限制。
     public static final String MAIL_CONTENT_REQUIRED    = "10008"; // 信件內容未填。
     public static final String MAIL_CONTENT_MAX         = "10009"; // 信件內容超過長度限制。
+    public static final String MEMBER_NAME_REQUIRED     = "10010"; // 會員姓名未填。
+    public static final String MEMBER_NAME_MAX          = "10011"; // 會員姓名超過長度限制。
+    public static final String MEMBER_GENDER_REQUIRED   = "10012"; // 會員性別未填。
+    public static final String MEMBER_GENDER_INVALID    = "10013"; // 會員性別不合法。
+    public static final String MEMBER_ACCOUNT_REQUIRED  = "10014"; // 會員帳號未填。
+    public static final String MEMBER_ACCOUNT_MAX       = "10015"; // 會員帳號超過長度限制。
+    public static final String MEMBER_EMAIL_INVALID     = "10016"; // 會員 email 格式錯誤。
+    public static final String MEMBER_EMAIL_MAX         = "10017"; // 會員 email 超過長度限制。
+    public static final String MEMBER_PASSWORD_REQUIRED = "10018"; // 會員密碼未填。
+    public static final String MEMBER_PASSWORD_SIZE     = "10019"; // 會員密碼長度不合法。
+    public static final String MEMBER_CONFIRM_PASSWORD_REQUIRED = "10020"; // 會員確認密碼未填。
+    public static final String MEMBER_CONFIRM_PASSWORD_NOT_MATCH = "10021"; // 會員確認密碼不一致。
+    public static final String MEMBER_ACCOUNT_EXISTS    = "10022"; // 會員帳號已存在。
 
     // 20000 區間：資料庫寫入相關錯誤。
     public static final String DATABASE_WRITE_FAILED    = "20000";
@@ -33,6 +46,7 @@ public final class ResponseMessages {
     public static final String RESOURCE_NOT_FOUND       = "30003"; // 資料不存在。
 
     public static final String BOOK_NOT_FOUND           = "40001"; // 找不到書籍。
+    public static final String MEMBER_NOT_FOUND         = "40002"; // 找不到會員。
     
     // 50000 區間：外接第三方服務通知相關錯誤。
     public static final String MAIL_SEND_FAILED         = "50000"; // 電子郵件寄送失敗。
@@ -54,11 +68,25 @@ public final class ResponseMessages {
         messages.put(MAIL_SUBJECT_MAX,      "信件標題不可超過 60 個字");
         messages.put(MAIL_CONTENT_REQUIRED, "信件內容必填");
         messages.put(MAIL_CONTENT_MAX,      "信件內容不可超過 1000 個字");
+        messages.put(MEMBER_NAME_REQUIRED,  "會員姓名必填");
+        messages.put(MEMBER_NAME_MAX,       "會員姓名不可超過 30 個字");
+        messages.put(MEMBER_GENDER_REQUIRED, "會員性別必填");
+        messages.put(MEMBER_GENDER_INVALID, "會員性別只能是 0、1、2");
+        messages.put(MEMBER_ACCOUNT_REQUIRED, "會員帳號必填");
+        messages.put(MEMBER_ACCOUNT_MAX,    "會員帳號不可超過 30 個字");
+        messages.put(MEMBER_EMAIL_INVALID,  "會員 email 格式錯誤");
+        messages.put(MEMBER_EMAIL_MAX,      "會員 email 不可超過 128 個字");
+        messages.put(MEMBER_PASSWORD_REQUIRED, "會員密碼必填");
+        messages.put(MEMBER_PASSWORD_SIZE,  "會員密碼長度必須是 6 到 12 個字");
+        messages.put(MEMBER_CONFIRM_PASSWORD_REQUIRED, "確認密碼必填");
+        messages.put(MEMBER_CONFIRM_PASSWORD_NOT_MATCH, "確認密碼不一致");
+        messages.put(MEMBER_ACCOUNT_EXISTS, "會員帳號已存在");
         messages.put(DATABASE_WRITE_FAILED, "資料寫入失敗");
         messages.put(HTTP_REQUEST_FAILED,   "HTTP 其他相關的錯誤");
         messages.put(METHOD_NOT_ALLOWED,    "HTTP 方法不支援");
         messages.put(NOT_FOUND,             "找不到 API");
         messages.put(BOOK_NOT_FOUND,        "找不到書籍");
+        messages.put(MEMBER_NOT_FOUND,      "找不到會員");
         messages.put(RESOURCE_NOT_FOUND,    "資料不存在");
         messages.put(MAIL_SEND_FAILED,      "電子郵件寄送失敗");
         return messages;

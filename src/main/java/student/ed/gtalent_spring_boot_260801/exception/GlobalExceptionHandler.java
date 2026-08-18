@@ -93,6 +93,17 @@ public class GlobalExceptionHandler {
         return new ApiResponse(message, errors);
     }
 
+    // 處理商業規則錯誤，例如帳號重複或確認密碼不一致。
+    @ExceptionHandler(MemberAccountExcption.class)
+    @ResponseStatus(HttpStatus.UNPROCESSABLE_CONTENT)
+    public ApiResponse handleMemberAccountExcption(MemberAccountExcption exception) {
+        Map<String, String> errors = new TreeMap<>();
+        errors.put(exception.getErrorKey(), ResponseMessages.getMessage(exception.getMessageCode()));
+
+        String message = ResponseMessages.getMessage(ResponseMessages.VALIDATION_FAILED);
+        return new ApiResponse(message, errors);
+    }
+
 
     // 處理寄信失敗，例如 SMTP 設定錯誤、帳密錯誤或 mail server 連線失敗。
     @ExceptionHandler(MailException.class)
