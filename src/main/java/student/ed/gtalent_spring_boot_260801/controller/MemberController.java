@@ -16,7 +16,7 @@ import jakarta.validation.Valid;
 // import student.ed.gtalent_spring_boot_260801.request.MemberProfileUpdateRequest;
 import student.ed.gtalent_spring_boot_260801.request.MemberRegisterRequest;
 import student.ed.gtalent_spring_boot_260801.response.ApiResponse;
-// import student.ed.gtalent_spring_boot_260801.response.MemberResponse;
+import student.ed.gtalent_spring_boot_260801.response.MemberResponse;
 import student.ed.gtalent_spring_boot_260801.service.MemberService;
 
 @RestController
@@ -29,11 +29,11 @@ public class MemberController {
         this.memberService = memberService;
     }
 
-    // @GetMapping("/{id}")
-    // @ResponseStatus(HttpStatus.OK)
-    // public MemberResponse getOneById(@PathVariable Long id) {
-    //     return new MemberResponse(memberService.findOneById(id));
-    // }
+    @GetMapping("/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public MemberResponse getOneById(@PathVariable Long id) {
+        return new MemberResponse(memberService.findOneById(id));
+    }
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
