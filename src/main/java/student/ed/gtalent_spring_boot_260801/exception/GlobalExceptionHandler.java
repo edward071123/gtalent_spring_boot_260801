@@ -101,4 +101,15 @@ public class GlobalExceptionHandler {
         return new ApiResponse(ResponseMessages.getMessage(ResponseMessages.MAIL_SEND_FAILED));
     }
 
+    // 處理Member錯誤，例如帳號重複或確認密碼不一致。
+    @ExceptionHandler(MemberAccountExcption.class)
+    @ResponseStatus(HttpStatus.UNPROCESSABLE_CONTENT)
+    public ApiResponse handleMemberAccountExcption(MemberAccountExcption exception) {
+        Map<String, String> errors = new TreeMap<>();
+        errors.put(exception.getErrorKey(), ResponseMessages.getMessage(exception.getMessageCode()));
+
+        String message = ResponseMessages.getMessage(ResponseMessages.VALIDATION_FAILED);
+        return new ApiResponse(message, errors);
+    }
+
 }
