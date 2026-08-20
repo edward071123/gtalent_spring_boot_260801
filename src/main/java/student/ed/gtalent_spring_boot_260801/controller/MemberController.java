@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
 import student.ed.gtalent_spring_boot_260801.request.MemberPasswordUpdateRequest;
-// import student.ed.gtalent_spring_boot_260801.request.MemberProfileUpdateRequest;
+import student.ed.gtalent_spring_boot_260801.request.MemberProfileUpdateRequest;
 import student.ed.gtalent_spring_boot_260801.request.MemberRegisterRequest;
 import student.ed.gtalent_spring_boot_260801.response.ApiResponse;
 import student.ed.gtalent_spring_boot_260801.response.MemberResponse;
@@ -45,14 +45,14 @@ public class MemberController {
 
     // 修改 name gender email
     // 有帶參數才修改, 沒帶就是維持原本
-    // @PutMapping("/{id}/profile")
-    // @ResponseStatus(HttpStatus.OK)
-    // public ApiResponse updateProfile(
-    //         @PathVariable Long id,
-    //         @Valid @RequestBody MemberProfileUpdateRequest request) {
-    //     memberService.updateProfile(id, request);
-    //     return new ApiResponse("會員基本資料修改成功");
-    // }
+    @PutMapping("/{id}/profile")
+    @ResponseStatus(HttpStatus.OK)
+    public ApiResponse updateProfile(
+            @PathVariable Long id,
+            @Valid @RequestBody MemberProfileUpdateRequest request) {
+        memberService.updateProfile(id, request);
+        return new ApiResponse("會員基本資料修改成功");
+    }
 
     @PutMapping("/{id}/password")
     @ResponseStatus(HttpStatus.OK)

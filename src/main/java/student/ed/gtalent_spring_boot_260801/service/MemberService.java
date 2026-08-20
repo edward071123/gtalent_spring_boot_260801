@@ -9,6 +9,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import student.ed.gtalent_spring_boot_260801.constant.ResponseMessages;
 import student.ed.gtalent_spring_boot_260801.request.MemberPasswordUpdateRequest;
+import student.ed.gtalent_spring_boot_260801.request.MemberProfileUpdateRequest;
 import student.ed.gtalent_spring_boot_260801.request.MemberRegisterRequest;
 import student.ed.gtalent_spring_boot_260801.entity.Member;
 import student.ed.gtalent_spring_boot_260801.repository.MemberRepository;
@@ -33,10 +34,10 @@ public class MemberService {
         // 2. 如果找不到
         if (member.isEmpty()) {
             throw new ResourceNotFoundException(
-                "member",
-                ResponseMessages.MEMBER_NOT_FOUND);
+                    "member",
+                    ResponseMessages.MEMBER_NOT_FOUND);
         }
-        
+
         // 3. 有找到，就把 Member 拿出來
         return member.get();
 
@@ -76,7 +77,7 @@ public class MemberService {
         }
 
     }
-    
+
     @Transactional
     public void updatePassword(Long id, MemberPasswordUpdateRequest request) {
         // 比對傳入的密碼跟確認密碼
@@ -90,13 +91,54 @@ public class MemberService {
         // 2. 如果找不到
         if (member.isEmpty()) {
             throw new ResourceNotFoundException(
-                "member",
-                ResponseMessages.MEMBER_NOT_FOUND);
+                    "member",
+                    ResponseMessages.MEMBER_NOT_FOUND);
         }
-        
+
         // 3. 有找到，就把 Member 拿出來
         Member targetMember = member.get();
         targetMember.setPassword(this.passwordEncoder.encode(request.getPassword()));
     }
-     
+
+    @Transactional
+    public void updateProfile(Long id, MemberProfileUpdateRequest request)
+    {
+        // 1. 給repository找
+        Optional<Member> member = this.repository.findOneById(id);
+
+        // 2. 如果找不到
+        if (member.isEmpty()) {
+            throw new ResourceNotFoundException(
+                    "member",
+                    ResponseMessages.MEMBER_NOT_FOUND);
+        }
+
+        Member targetMember = member.get();
+
+        if (request.getName() != null) {
+            if (request.getName().isBlank()) {
+                throw new MemberAccountExcption("name", ResponseMessages.MEMBER_NAME_REQUIRED);
+            }
+
+            targetMember.setName(request.getName().trim());
+        }
+
+        if (request.getGender() != null) {
+            targetMember.setGender(request.getGender());
+        }
+
+        if (request.getEmail() != null) {
+            targetMember.setEmail(normalizeEmail(request.getEmail()));
+        }
+
+    }
+    
+
+    private String normalizeEmail(String email) {
+        if (email == null || email.isBlank()) {
+            return null;
+        }
+
+        return email.trim();
+    }
 }
