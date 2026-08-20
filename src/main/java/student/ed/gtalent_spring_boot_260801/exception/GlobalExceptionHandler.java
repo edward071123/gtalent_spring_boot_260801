@@ -112,4 +112,14 @@ public class GlobalExceptionHandler {
         return new ApiResponse(message, errors);
     }
 
+    // 處理Auth錯誤。
+    @ExceptionHandler(AuthException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ApiResponse handleAuthException(AuthException exception) {
+        Map<String, String> errors = new TreeMap<>();
+        errors.put(exception.getErrorKey(), ResponseMessages.getMessage(exception.getMessageCode()));
+
+        return new ApiResponse(ResponseMessages.getMessage(exception.getMessageCode()), errors);
+    }
+
 }
