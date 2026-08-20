@@ -1,6 +1,8 @@
 package student.ed.gtalent_spring_boot_260801.service;
 
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -131,6 +133,30 @@ public class MemberService {
             targetMember.setEmail(normalizeEmail(request.getEmail()));
         }
 
+    }
+
+    @Transactional
+    public void delete(long id) {
+        // 1. 給repository找
+        Optional<Member> member = this.repository.findOneById(id);
+
+        // 2. 如果找不到
+        if (member.isEmpty()) {
+            throw new ResourceNotFoundException(
+                    "member",
+                    ResponseMessages.MEMBER_NOT_FOUND);
+        }
+
+        Member targetMember = member.get();
+        LocalDateTime now = LocalDateTime.now();
+        DateTimeFormatter DELETED_ACCOUNT_TIMESTAMP_FORMAT =
+                DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+
+        byte deleteStatus = 0;
+        // 軟刪除時同步改 account，釋放原 account 給新註冊使用。
+        targetMember.setStatus(deleteStatus);
+        targetMember.setDeletedAt(now);
+        targetMember.setAccount("del_" + now.format(DELETED_ACCOUNT_TIMESTAMP_FORMAT) + "_" + targetMember.getAccount());
     }
     
 

@@ -63,10 +63,13 @@ public class MemberController {
         return new ApiResponse("會員密碼修改成功");
     }
 
-    // @DeleteMapping("/{id}")
-    // @ResponseStatus(HttpStatus.OK)
-    // public ApiResponse delete(@PathVariable Long id) {
-    //     memberService.delete(id);
-    //     return new ApiResponse("會員帳號刪除成功");
-    // }
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public ApiResponse delete(@PathVariable Long id) {
+        memberService.delete(id);
+        return new ApiResponse("會員帳號刪除成功");
+    }
+
+    // 課後練習:
+    // 1. get members 取得所有會員 且 做分頁功能
 }
