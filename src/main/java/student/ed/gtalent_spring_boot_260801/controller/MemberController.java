@@ -17,7 +17,12 @@ import student.ed.gtalent_spring_boot_260801.request.MemberProfileUpdateRequest;
 import student.ed.gtalent_spring_boot_260801.request.MemberRegisterRequest;
 import student.ed.gtalent_spring_boot_260801.response.ApiResponse;
 import student.ed.gtalent_spring_boot_260801.response.MemberResponse;
+import student.ed.gtalent_spring_boot_260801.response.TokenResponse;
 import student.ed.gtalent_spring_boot_260801.service.MemberService;
+
+import student.ed.gtalent_spring_boot_260801.request.MemberLoginRequest;
+import student.ed.gtalent_spring_boot_260801.request.TokenLogoutRequest;
+import student.ed.gtalent_spring_boot_260801.request.TokenRefreshRequest;
 
 @RestController
 @RequestMapping("/members")
@@ -41,7 +46,6 @@ public class MemberController {
         memberService.register(request);
         return new ApiResponse("會員註冊成功");
     }
-
 
     // 修改 name gender email
     // 有帶參數才修改, 沒帶就是維持原本
@@ -68,6 +72,25 @@ public class MemberController {
     public ApiResponse delete(@PathVariable Long id) {
         memberService.delete(id);
         return new ApiResponse("會員帳號刪除成功");
+    }
+
+    @PostMapping("/login")
+    @ResponseStatus(HttpStatus.OK)
+    public TokenResponse login(@Valid @RequestBody MemberLoginRequest request) {
+        return memberService.login(request);
+    }
+
+    @PostMapping("/refresh")
+    @ResponseStatus(HttpStatus.OK)
+    public TokenResponse refresh(@Valid @RequestBody TokenRefreshRequest request) {
+        return memberService.refresh(request.getRefreshToken());
+    }
+
+    @PostMapping("/logout")
+    @ResponseStatus(HttpStatus.OK)
+    public ApiResponse logout(@Valid @RequestBody TokenLogoutRequest request) {
+        memberService.logout(request.getRefreshToken());
+        return new ApiResponse("會員登出成功");
     }
 
     // 課後練習:

@@ -23,4 +23,14 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     )
     // 找出單一會員By Id
     public Optional<Member> findOneById(@Param("id") long id);
+
+
+    // 會員登入用 account 查詢，status = 1 才能登入。
+    @Query(
+            value = "SELECT * FROM members WHERE account = :account AND status = 1",
+            nativeQuery = true
+    )
+    public Optional<Member> findOneByAccountAndStatus(
+            @Param("account") String account
+    );
 }
