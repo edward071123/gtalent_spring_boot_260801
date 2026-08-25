@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>書籍列表</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, "Noto Sans TC", sans-serif;
+            background: #f4f6f8;
+            color: #1f2933;
+        }
+
+        header {
+            background: #ffffff;
+            border-bottom: 1px solid #d9e2ec;
+        }
+
+        .bar {
+            width: min(1080px, calc(100vw - 32px));
+            margin: 0 auto;
+            padding: 18px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 26px;
+        }
+
+        main {
+            width: min(1080px, calc(100vw - 32px));
+            margin: 28px auto;
+            background: #ffffff;
+            border: 1px solid #d9e2ec;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 14px 16px;
+            border-bottom: 1px solid #edf2f7;
+            text-align: left;
+        }
+
+        th {
+            background: #f8fafc;
+            font-size: 14px;
+            color: #52606d;
+        }
+
+        tr:last-child td {
+            border-bottom: 0;
+        }
+
+        .price {
+            text-align: right;
+        }
+
+        button {
+            padding: 10px 14px;
+            border: 1px solid #bcccdc;
+            border-radius: 6px;
+            background: #ffffff;
+            color: #1f2933;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .message {
+            padding: 32px;
+            text-align: center;
+            color: #627d98;
+        }
+
+        .error {
+            color: #9b1c1c;
+        }
+
+        .pager {
+            padding: 14px 16px;
+            border-top: 1px solid #edf2f7;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 12px;
+            background: #ffffff;
+        }
+
+        .pager select {
+            padding: 9px 10px;
+            border: 1px solid #bcccdc;
+            border-radius: 6px;
+            background: #ffffff;
+            color: #1f2933;
+        }
+
+        .pager button:disabled {
+            cursor: not-allowed;
+            opacity: 0.45;
+        }
+
+        #pageInfo {
+            min-width: 120px;
+            text-align: center;
+            color: #52606d;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <div class="bar">
+        <h1>書籍列表</h1>
+        <button id="logoutButton" type="button">登出</button>
+    </div>
+</header>
+
+<main>
+    <div id="message" class="message">讀取中</div>
+    <table id="booksTable" hidden>
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>書名</th>
+            <th class="price">價格</th>
+        </tr>
+        </thead>
+        <tbody id="booksBody"></tbody>
+    </table>
+    <div id="pager" class="pager" hidden>
+        <label for="pageSize">每頁</label>
+        <select id="pageSize">
+            <option value="5">5 筆</option>
+            <option value="10" selected>10 筆</option>
+            <option value="20">20 筆</option>
+            <option value="50">50 筆</option>
+        </select>
+        <button id="prevPage" type="button">上一頁</button>
+        <span id="pageInfo">第 1 / 1 頁</span>
+        <button id="nextPage" type="button">下一頁</button>
+    </div>
+</main>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script>
+    let currentPage = 1;
+    let totalPages = 1;
+
+    function getAccessToken() {
+        return localStorage.getItem("accessToken");
+    }
+
+    function getRefreshToken() {
+        return localStorage.getItem("refreshToken");
+    }
+
+    function saveNewTokens(xhr) {
+        const newAccessToken = xhr.getResponseHeader("X-New-Access-Token");
+        const newRefreshToken = xhr.getResponseHeader("X-New-Refresh-Token");
+
+        if (newAccessToken) {
+            localStorage.setItem("accessToken", newAccessToken);
+        }
+
+        if (newRefreshToken) {
+            localStorage.setItem("refreshToken", newRefreshToken);
+        }
+    }
+
+    function clearTokens() {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+    }
+
+    function apiAjax(options) {
+        const accessToken = getAccessToken();
+        const refreshToken = getRefreshToken();
+
+        if (!accessToken || !refreshToken) {
+            window.location.href = "/page/login";
+            return null;
+        }
+
+        return $.ajax({
+            ...options,
+            headers: {
+                ...(options.headers || {}),
+                Authorization: `Bearer ${accessToken}`,
+                "X-Refresh-Token": refreshToken
+            }
+        });
+    }
+
+    function loadBooks() {
+        const pageSize = $("#pageSize").val();
+        const request = apiAjax({
+            url: `/books?page=${currentPage}&size=${pageSize}`,
+            method: "GET"
+        });
+
+        if (!request) {
+            return;
+        }
+
+        request
+            .done(function (data, textStatus, xhr) {
+                saveNewTokens(xhr);
+                currentPage = data.page || currentPage;
+                totalPages = data.totalPages || 1;
+                renderBooks(data.content || []);
+                renderPager(data);
+            })
+            .fail(function (xhr) {
+                const data = xhr.responseJSON || {};
+                $("#message").text(data.message || "讀取書籍失敗").addClass("error").prop("hidden", false);
+                $("#booksTable").prop("hidden", true);
+                $("#pager").prop("hidden", true);
+            });
+    }
+
+    function renderBooks(books) {
+        const body = $("#booksBody");
+        body.empty();
+
+        if (books.length === 0) {
+            $("#message").text("目前沒有書籍資料").removeClass("error").prop("hidden", false);
+            $("#booksTable").prop("hidden", true);
+            $("#pager").prop("hidden", true);
+            return;
+        }
+
+        books.forEach(function (book) {
+            $("<tr>")
+                .append($("<td>").text(book.id))
+                .append($("<td>").text(book.name))
+                .append($("<td>").addClass("price").text(book.price))
+                .appendTo(body);
+        });
+
+        $("#message").prop("hidden", true);
+        $("#booksTable").prop("hidden", false);
+    }
+
+    function renderPager(data) {
+        const page = data.page || 1;
+        const total = data.totalPages || 1;
+        const totalElements = data.totalElements || 0;
+
+        $("#pageInfo").text(`第 ${page} / ${total} 頁，共 ${totalElements} 筆`);
+        $("#prevPage").prop("disabled", page <= 1);
+        $("#nextPage").prop("disabled", page >= total);
+        $("#pager").prop("hidden", false);
+    }
+
+    $("#prevPage").on("click", function () {
+        if (currentPage <= 1) {
+            return;
+        }
+
+        currentPage -= 1;
+        loadBooks();
+    });
+
+    $("#nextPage").on("click", function () {
+        if (currentPage >= totalPages) {
+            return;
+        }
+
+        currentPage += 1;
+        loadBooks();
+    });
+
+    $("#pageSize").on("change", function () {
+        currentPage = 1;
+        loadBooks();
+    });
+
+    $("#logoutButton").on("click", function () {
+        const refreshToken = getRefreshToken();
+
+        if (!refreshToken) {
+            clearTokens();
+            window.location.href = "/page/login";
+            return;
+        }
+
+        $.ajax({
+            url: "/members/logout",
+            method: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({ refreshToken }),
+            complete: function () {
+                clearTokens();
+                window.location.href = "/page/login";
+            }
+        });
+    });
+
+    $(loadBooks);
+</script>
+</body>
+</html>
