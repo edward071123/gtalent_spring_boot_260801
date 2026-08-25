@@ -39,6 +39,12 @@ public class AuthInterceptor implements HandlerInterceptor {
         this.authTokenRepository = authTokenRepository;
     }
 
+    // 每個受保護 API 進 controller 前都會先進到這裡。
+    // 流程：
+    // 1. 從 Authorization header 取出 access token。
+    // 2. access token 有效時，檢查 token 類型、DB 狀態、會員 id 是否符合路徑。
+    // 3. access token 已過期時，改用 X-Refresh-Token 自動換一組新 token。
+    // 4. token 格式錯誤或簽章不合法時，直接回 token 不合法。
     @Override
     @Transactional
     public boolean preHandle(
@@ -50,7 +56,16 @@ public class AuthInterceptor implements HandlerInterceptor {
         try {
             // access token 有效就直接放行。
             Claims accessClaims = jwtService.parse(accessToken);
-            validateAccessToken(accessToken, accessClaims, request);
+            try {
+                validateAccessToken(accessToken, accessClaims, request);
+            } catch (AuthException exception) {
+                if (!ResponseMessages.TOKEN_EXPIRED.equals(exception.getMessageCode())) {
+                    throw exception;
+                }
+
+                // JWT exp 尚未觸發過期，但 DB access_expires_at 已過期時，也走自動 refresh。
+                refreshTokenAndSetHeaders(request, response, accessClaims);
+            }
             return true;
         } catch (ExpiredJwtException exception) {
             // access token 過期時，改用 X-Refresh-Token 自動換新 token。
@@ -61,6 +76,8 @@ public class AuthInterceptor implements HandlerInterceptor {
         }
     }
 
+    // 從 Authorization header 取出 Bearer token。
+    // 沒有 Authorization、不是 Bearer 格式、或 token 是空字串時，都視為 token 必填。
     private String getBearerToken(HttpServletRequest request) {
         String authorization = request.getHeader("Authorization");
 
@@ -76,6 +93,12 @@ public class AuthInterceptor implements HandlerInterceptor {
         return token;
     }
 
+    // 驗證 access token 的業務規則。
+    // JWT parse 只保證簽章與 exp 正確；這裡額外檢查：
+    // 1. ownerType 必須是 MEMBER。
+    // 2. tokenType 必須是 access。
+    // 3. DB 仍有這顆 active access token，代表沒有被 logout 或 refresh rotation 撤銷。
+    // 4. 若 API path 是 /members/{id}，只能操作 token 所屬會員自己的資料。
     private void validateAccessToken(String accessToken, Claims claims, HttpServletRequest request) {
         String ownerType = claims.get("ownerType", String.class);
         String tokenType = claims.get("tokenType", String.class);
@@ -91,13 +114,25 @@ public class AuthInterceptor implements HandlerInterceptor {
                 AuthOwnerTypes.MEMBER
         );
 
-        if (authToken.isEmpty() || authToken.get().getAccessExpiresAt().isBefore(LocalDateTime.now())) {
+        if (authToken.isEmpty()) {
+            throw new AuthException("token", ResponseMessages.TOKEN_INVALID);
+        }
+
+        if (authToken.get().getAccessExpiresAt().isBefore(LocalDateTime.now())) {
             throw new AuthException("token", ResponseMessages.TOKEN_EXPIRED);
         }
 
         validateMemberPathOwner(request, ownerId);
     }
 
+    // access token 過期時的自動 refresh 流程。
+    // 前端必須同時帶 X-Refresh-Token，且 refresh token 必須：
+    // 1. 是合法 JWT。
+    // 2. ownerType 是 MEMBER。
+    // 3. tokenType 是 refresh。
+    // 4. ownerId 和過期 access token 的 ownerId 相同。
+    // 5. DB 中仍是 active 狀態，尚未過期、尚未 logout、尚未被用過。
+    // 成功後會撤銷舊 refresh token，建立新 access/refresh token，並放到 response headers。
     private void refreshTokenAndSetHeaders(
             HttpServletRequest request,
             HttpServletResponse response,
@@ -143,6 +178,8 @@ public class AuthInterceptor implements HandlerInterceptor {
         response.setHeader("X-New-Refresh-Expires-At", tokenResponse.getRefreshExpiresAt().toString());
     }
 
+    // 解析 refresh token，並把 JWT 套件的例外轉成專案自己的 AuthException。
+    // 這樣 GlobalExceptionHandler 可以統一回傳 token 已過期或 token 不合法。
     private Claims parseRefreshToken(String refreshToken) {
         try {
             return jwtService.parse(refreshToken);
@@ -153,6 +190,8 @@ public class AuthInterceptor implements HandlerInterceptor {
         }
     }
 
+    // 建立一組新的 access token 和 refresh token。
+    // DB 不存原始 JWT，只存 hash 和過期時間，後續驗證時再用 hash 查 DB。
     private TokenResponse createAndSaveToken(String ownerType, Long ownerId) {
         LocalDateTime accessExpiresAt = jwtService.getAccessExpiresAt();
         LocalDateTime refreshExpiresAt = jwtService.getRefreshExpiresAt();
@@ -172,6 +211,8 @@ public class AuthInterceptor implements HandlerInterceptor {
         return new TokenResponse(accessToken, refreshToken, accessExpiresAt, refreshExpiresAt);
     }
 
+    // 從 X-Refresh-Token header 取出 refresh token。
+    // 自動 refresh 才會用到；一般 access token 尚未過期時不會讀這個 header。
     private String getRefreshToken(HttpServletRequest request) {
         String refreshToken = request.getHeader(REFRESH_TOKEN_HEADER);
         if (refreshToken == null || refreshToken.isBlank()) {
@@ -181,6 +222,9 @@ public class AuthInterceptor implements HandlerInterceptor {
         return refreshToken;
     }
 
+    // 限制會員只能操作自己的 /members/{id} API。
+    // 例如 token subject 是 1，只能呼叫 /members/1，不能呼叫 /members/2。
+    // 如果 API path 不是 /members/{id} 格式，這個方法不會阻擋。
     private void validateMemberPathOwner(HttpServletRequest request, Long ownerId) {
         Matcher matcher = MEMBER_ID_PATH_PATTERN.matcher(request.getRequestURI());
 

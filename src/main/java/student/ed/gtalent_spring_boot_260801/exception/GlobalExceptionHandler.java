@@ -86,11 +86,8 @@ public class GlobalExceptionHandler {
     // API 路徑存在，但是 request 指定的資料不存在，所以這裡依專案規則回 400。
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiResponse handleResourceNotFoundException(ResourceNotFoundException exception) {
-        Map<String, String> errors = new TreeMap<>();
-        errors.put(exception.getErrorKey(), ResponseMessages.getMessage(exception.getMessageCode()));
-
         String message = ResponseMessages.getMessage(ResponseMessages.RESOURCE_NOT_FOUND);
-        return new ApiResponse(message, errors);
+        return new ApiResponse(message, buildErrors(exception));
     }
 
 
@@ -105,21 +102,23 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MemberAccountExcption.class)
     @ResponseStatus(HttpStatus.UNPROCESSABLE_CONTENT)
     public ApiResponse handleMemberAccountExcption(MemberAccountExcption exception) {
-        Map<String, String> errors = new TreeMap<>();
-        errors.put(exception.getErrorKey(), ResponseMessages.getMessage(exception.getMessageCode()));
-
         String message = ResponseMessages.getMessage(ResponseMessages.VALIDATION_FAILED);
-        return new ApiResponse(message, errors);
+        return new ApiResponse(message, buildErrors(exception));
     }
 
     // 處理Auth錯誤。
     @ExceptionHandler(AuthException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public ApiResponse handleAuthException(AuthException exception) {
+        return new ApiResponse(
+                ResponseMessages.getMessage(exception.getMessageCode()),
+                buildErrors(exception));
+    }
+
+    private Map<String, String> buildErrors(ApiException exception) {
         Map<String, String> errors = new TreeMap<>();
         errors.put(exception.getErrorKey(), ResponseMessages.getMessage(exception.getMessageCode()));
-
-        return new ApiResponse(ResponseMessages.getMessage(exception.getMessageCode()), errors);
+        return errors;
     }
 
 }
