@@ -154,17 +154,26 @@
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script>
+    // currentPage 記錄目前正在看的頁碼；進入頁面時預設從第 1 頁開始。
     let currentPage = 1;
+
+    // totalPages 記錄後端回傳的總頁數，用來判斷「下一頁」是否還能點。
     let totalPages = 1;
 
+    // 從瀏覽器的 localStorage 取出 access token。
+    // access token 會放在 Authorization header，讓後端知道目前使用者是誰。
     function getAccessToken() {
         return localStorage.getItem("accessToken");
     }
 
+    // 從瀏覽器的 localStorage 取出 refresh token。
+    // refresh token 會送到後端，讓後端在 access token 快過期時可以補發新 token。
     function getRefreshToken() {
         return localStorage.getItem("refreshToken");
     }
 
+    // 有些 API 回應會在 header 帶回新的 token。
+    // 如果有新的 token，就立刻存回 localStorage，之後的請求才會使用最新憑證。
     function saveNewTokens(xhr) {
         const newAccessToken = xhr.getResponseHeader("X-New-Access-Token");
         const newRefreshToken = xhr.getResponseHeader("X-New-Refresh-Token");
@@ -178,15 +187,21 @@
         }
     }
 
+    // 清除登入憑證。通常會在登出、token 不存在或登入狀態失效時使用。
     function clearTokens() {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
     }
 
+    // 統一處理需要登入的 AJAX 請求。
+    // 呼叫這個函式時，只要傳入原本 $.ajax 需要的 options，
+    // 這裡會自動補上 access token 和 refresh token。
     function apiAjax(options) {
         const accessToken = getAccessToken();
         const refreshToken = getRefreshToken();
 
+        // 如果瀏覽器裡沒有 token，代表使用者尚未登入或資料已被清掉。
+        // 這時不呼叫 API，直接導回登入頁。
         if (!accessToken || !refreshToken) {
             window.location.href = "/page/login";
             return null;
@@ -195,6 +210,7 @@
         return $.ajax({
             ...options,
             headers: {
+                // 保留呼叫端自己傳入的 headers，避免被下面的 token headers 覆蓋掉。
                 ...(options.headers || {}),
                 Authorization: `Bearer ${accessToken}`,
                 "X-Refresh-Token": refreshToken
@@ -202,6 +218,8 @@
         });
     }
 
+    // 向後端取得書籍列表。
+    // currentPage 決定目前頁碼，pageSize 決定每頁顯示幾筆。
     function loadBooks() {
         const pageSize = $("#pageSize").val();
         const request = apiAjax({
@@ -209,19 +227,26 @@
             method: "GET"
         });
 
+        // apiAjax 回傳 null 代表沒有 token，已經導向登入頁，這裡不再往下做。
         if (!request) {
             return;
         }
 
         request
             .done(function (data, textStatus, xhr) {
+                // 每次成功呼叫 API 後，都檢查後端是否順便發了新 token。
                 saveNewTokens(xhr);
+
+                // 後端回傳的 page / totalPages 會作為畫面與按鈕狀態的依據。
                 currentPage = data.page || currentPage;
                 totalPages = data.totalPages || 1;
+
+                // content 是目前這一頁的書籍資料；若沒有資料就給空陣列。
                 renderBooks(data.content || []);
                 renderPager(data);
             })
             .fail(function (xhr) {
+                // API 失敗時顯示錯誤訊息，並隱藏表格與分頁，避免畫面留下舊資料。
                 const data = xhr.responseJSON || {};
                 $("#message").text(data.message || "讀取書籍失敗").addClass("error").prop("hidden", false);
                 $("#booksTable").prop("hidden", true);
@@ -229,11 +254,16 @@
             });
     }
 
+    // 把書籍資料畫到 HTML 表格裡。
+    // books 是陣列，每一個 book 物件都會變成一列 <tr>。
     function renderBooks(books) {
         const body = $("#booksBody");
+
+        // 先清空舊資料，避免切換頁面時新舊資料混在一起。
         body.empty();
 
         if (books.length === 0) {
+            // 沒有資料時顯示提示文字，並把表格與分頁藏起來。
             $("#message").text("目前沒有書籍資料").removeClass("error").prop("hidden", false);
             $("#booksTable").prop("hidden", true);
             $("#pager").prop("hidden", true);
@@ -241,6 +271,8 @@
         }
 
         books.forEach(function (book) {
+            // 使用 jQuery 建立 <tr> 和 <td>，再把文字放進每個欄位。
+            // .text(...) 會把內容當成純文字，可以避免 HTML 被直接插入頁面。
             $("<tr>")
                 .append($("<td>").text(book.id))
                 .append($("<td>").text(book.name))
@@ -248,21 +280,28 @@
                 .appendTo(body);
         });
 
+        // 有資料時隱藏訊息區，並顯示書籍表格。
         $("#message").prop("hidden", true);
         $("#booksTable").prop("hidden", false);
     }
 
+    // 更新分頁區塊的文字與按鈕狀態。
     function renderPager(data) {
         const page = data.page || 1;
         const total = data.totalPages || 1;
         const totalElements = data.totalElements || 0;
 
         $("#pageInfo").text(`第 ${page} / ${total} 頁，共 ${totalElements} 筆`);
+
+        // 第一頁不能再往前，所以停用「上一頁」。
         $("#prevPage").prop("disabled", page <= 1);
+
+        // 最後一頁不能再往後，所以停用「下一頁」。
         $("#nextPage").prop("disabled", page >= total);
         $("#pager").prop("hidden", false);
     }
 
+    // 點「上一頁」時，頁碼減 1，再重新向後端取得資料。
     $("#prevPage").on("click", function () {
         if (currentPage <= 1) {
             return;
@@ -272,6 +311,7 @@
         loadBooks();
     });
 
+    // 點「下一頁」時，頁碼加 1，再重新向後端取得資料。
     $("#nextPage").on("click", function () {
         if (currentPage >= totalPages) {
             return;
@@ -281,14 +321,19 @@
         loadBooks();
     });
 
+    // 使用者改變每頁筆數時，回到第 1 頁重新查詢。
+    // 這樣可以避免原本頁碼超過新的總頁數。
     $("#pageSize").on("change", function () {
         currentPage = 1;
         loadBooks();
     });
 
+    // 點「登出」時，通知後端讓 refresh token 失效。
+    // 不管後端回應成功或失敗，前端最後都會清除 token 並回到登入頁。
     $("#logoutButton").on("click", function () {
         const refreshToken = getRefreshToken();
 
+        // 如果前端已經沒有 refresh token，就直接清除本地資料並回登入頁。
         if (!refreshToken) {
             clearTokens();
             window.location.href = "/page/login";
@@ -307,6 +352,7 @@
         });
     });
 
+    // 頁面載入完成後自動執行 loadBooks，取得第一頁書籍資料。
     $(loadBooks);
 </script>
 </body>

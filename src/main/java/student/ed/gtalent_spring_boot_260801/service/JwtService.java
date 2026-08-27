@@ -19,6 +19,9 @@ import io.jsonwebtoken.security.Keys;
 @Service
 public class JwtService {
 
+    // 取得目前伺服器的預設時區，例如 Asia/Taipei。
+    // LocalDateTime 本身沒有時區概念，但 JWT 的過期時間使用 Date，代表一個明確時間點。
+    // 所以 LocalDateTime 和 Date 互相轉換時，需要指定同一個時區，避免時間換算錯誤。
     private static final ZoneId ZONE_ID = ZoneId.systemDefault();
 
     private final SecretKey secretKey;
