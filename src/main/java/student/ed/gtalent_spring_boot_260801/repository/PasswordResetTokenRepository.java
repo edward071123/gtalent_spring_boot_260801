@@ -14,19 +14,37 @@ public interface PasswordResetTokenRepository extends JpaRepository<PasswordRese
 
     @Modifying
     @Query(
-            value = """
-                    UPDATE password_reset_tokens
-                    SET used = 1,
-                        deleted_at = :now,
-                        updated_at = :now
-                    WHERE member_id = :memberId
-                      AND used = 0
-                      AND deleted_at IS NULL
-                    """,
-            nativeQuery = true
+        value = """
+                UPDATE password_reset_tokens
+                SET used = 1,
+                deleted_at = :now,
+                updated_at = :now
+                WHERE member_id = :memberId
+                AND used = 0
+                AND deleted_at IS NULL
+                """,
+        nativeQuery = true
     )
     public void revokeActiveByMemberId(
             @Param("memberId") Long memberId,
             @Param("now") LocalDateTime now
     );
+
+
+    @Query(
+        value ="""
+                SELECT * FROM password_reset_tokens
+                WHERE token_hash = :tokenHash
+                AND used = 0
+                AND expires_at > :now
+                AND deleted_at IS NULL                   
+        """,
+        nativeQuery = true             
+    )
+
+    public Optional<PasswordResetToken> findValidByTokenHash(
+            @Param("tokenHash") String tokenHash,
+            @Param("now") LocalDateTime now
+    );
+
 }

@@ -313,7 +313,34 @@ public class MemberService {
 
     @Transactional
     public void resetPassword(MemberPasswordResetRequest request) {
-        
+        // 1. 檢查token
+
+        // (1.1).給repository找
+        String token = request.getToken().trim();
+        LocalDateTime now = LocalDateTime.now();
+        Optional<PasswordResetToken> passwordResetToken = passwordResetTokenRepository.findValidByTokenHash(token, now);
+
+        // (1.2). 如果資料庫找不到token
+        if (passwordResetToken.isEmpty()) {
+            throw new MemberAccountExcption("token", ResponseMessages.PASSWORD_RESET_TOKEN_INVALID);
+        }
+
+        // 有找到就繼續
+        PasswordResetToken targetTokenHash = passwordResetToken.get();
+
+        // 2. 找target member
+        Long memberId = targetTokenHash.getMemberId();
+        Optional<Member> member = this.repository.findOneById(memberId);
+        if (member.isEmpty()) {
+            throw new ResourceNotFoundException(
+                    "member",
+                    ResponseMessages.MEMBER_NOT_FOUND);
+        }
+
+        Member targetMember = member.get();
+        // 3. 修改密碼
+        targetMember.setPassword(this.passwordEncoder.encode(request.getPassword()));
+
     }
     
 

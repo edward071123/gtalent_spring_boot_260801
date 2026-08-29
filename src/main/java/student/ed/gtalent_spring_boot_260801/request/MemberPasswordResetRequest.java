@@ -10,7 +10,7 @@ import student.ed.gtalent_spring_boot_260801.constant.ResponseMessages;
 @Setter
 public class MemberPasswordResetRequest {
     
-    @NotBlank(message = ResponseMessages.MEMBER_PASSWORD_REQUIRED)
+    @NotBlank(message = ResponseMessages.PASSWORD_RESET_TOKEN_REQUIRED)
     private String token;
 
     @NotBlank(message = ResponseMessages.MEMBER_PASSWORD_REQUIRED)
