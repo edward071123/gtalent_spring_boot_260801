@@ -342,6 +342,17 @@ public class MemberService {
         targetMember.setPassword(this.passwordEncoder.encode(request.getPassword()));
 
     }
+
+    // 重設密碼頁面驗證token
+    public boolean isPasswordResetTokenValid(String token) {
+        if (token == null || token.isBlank()) {
+            return false;
+        }
+
+        return passwordResetTokenRepository
+                .findValidByTokenHash(jwtService.hashToken(token.trim()), LocalDateTime.now())
+                .isPresent();
+    }
     
 
     private String normalizeEmail(String email) {
