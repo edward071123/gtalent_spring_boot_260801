@@ -294,7 +294,7 @@ public class MemberService {
 
         String resetLink = """
             %s/page/reset-password?token=%s
-        """.formatted(appBaseUrl, rawToken);
+        """.formatted(appBaseUrl, tokenHash);
 
         // 信件內容只放重設連結與有效時間。
         // 不把密碼、會員 id 或 token hash 放進信中。
