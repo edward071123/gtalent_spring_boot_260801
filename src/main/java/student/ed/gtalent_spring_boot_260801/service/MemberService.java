@@ -12,7 +12,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import student.ed.gtalent_spring_boot_260801.constant.AuthOwnerTypes;
 import student.ed.gtalent_spring_boot_260801.constant.ResponseMessages;
+import student.ed.gtalent_spring_boot_260801.request.MemberForgotPasswordRequest;
 import student.ed.gtalent_spring_boot_260801.request.MemberLoginRequest;
+import student.ed.gtalent_spring_boot_260801.request.MemberPasswordResetRequest;
 import student.ed.gtalent_spring_boot_260801.request.MemberPasswordUpdateRequest;
 import student.ed.gtalent_spring_boot_260801.request.MemberProfileUpdateRequest;
 import student.ed.gtalent_spring_boot_260801.request.MemberRegisterRequest;
@@ -216,6 +218,16 @@ public class MemberService {
 
         authToken.setRevoked(TOKEN_REVOKED);
         authToken.setDeletedAt(LocalDateTime.now());
+    }
+
+    @Transactional
+    public void forgotPassword(MemberForgotPasswordRequest request) {
+
+    }
+
+    @Transactional
+    public void resetPassword(MemberPasswordResetRequest request) {
+        
     }
     
 

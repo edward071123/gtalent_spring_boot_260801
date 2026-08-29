@@ -35,7 +35,9 @@ public final class ResponseMessages {
     public static final String MEMBER_CONFIRM_PASSWORD_REQUIRED = "10020"; // 會員確認密碼未填。
     public static final String MEMBER_CONFIRM_PASSWORD_NOT_MATCH = "10021"; // 會員確認密碼不一致。
     public static final String MEMBER_ACCOUNT_EXISTS    = "10022"; // 會員帳號已存在。
-    public static final String REFRESH_TOKEN_REQUIRED   = "10023"; // refresh token 未填。
+    public static final String REFRESH_TOKEN_REQUIRED = "10023"; // refresh token 未填。
+    public static final String MEMBER_ACCOUNT_OR_EMAIL_REQUIRED = "10024"; // 忘記密碼帳號或 email 未填。
+    public static final String MEMBER_ACCOUNT_OR_EMAIL_MAX = "10025"; // 忘記密碼帳號或 email 過
 
     // 20000 區間：資料庫寫入相關錯誤。
     public static final String DATABASE_WRITE_FAILED    = "20000";
@@ -98,7 +100,10 @@ public final class ResponseMessages {
         messages.put(TOKEN_EXPIRED,         "token 已過期，請重新登入");
         messages.put(TOKEN_REQUIRED,        "token 必填");
         messages.put(RESOURCE_NOT_FOUND,    "資料不存在");
-        messages.put(MAIL_SEND_FAILED,      "電子郵件寄送失敗");
+        messages.put(MAIL_SEND_FAILED, "電子郵件寄送失敗");
+        messages.put(MEMBER_ACCOUNT_OR_EMAIL_REQUIRED, "帳號或 email 必填");
+        messages.put(MEMBER_ACCOUNT_OR_EMAIL_MAX, "帳號或 email 不可超過 128 個字");
+    
         return messages;
     }
 
