@@ -294,7 +294,7 @@ public class MemberService {
 
         String resetLink = """
             %s/page/reset-password?token=%s
-        """.formatted(appBaseUrl, tokenHash);
+        """.formatted(appBaseUrl, rawToken);
 
         // 信件內容只放重設連結與有效時間。
         // 不把密碼、會員 id 或 token hash 放進信中。
@@ -318,7 +318,7 @@ public class MemberService {
         // (1.1).給repository找
         String token = request.getToken().trim();
         LocalDateTime now = LocalDateTime.now();
-        Optional<PasswordResetToken> passwordResetToken = passwordResetTokenRepository.findValidByTokenHash(token, now);
+        Optional<PasswordResetToken> passwordResetToken = passwordResetTokenRepository.findValidByTokenHash(jwtService.hashToken(token), now);
 
         // (1.2). 如果資料庫找不到token
         if (passwordResetToken.isEmpty()) {
@@ -340,6 +340,13 @@ public class MemberService {
         Member targetMember = member.get();
         // 3. 修改密碼
         targetMember.setPassword(this.passwordEncoder.encode(request.getPassword()));
+
+        // 4. 註銷token
+        // token 使用後立刻標記已使用並 soft delete。
+        // 這可以防止同一封 email 連結被重複點擊後再次修改密碼。
+        Byte PASSWORD_RESET_TOKEN_USED = 1;
+        targetTokenHash.setUsed(PASSWORD_RESET_TOKEN_USED);
+        targetTokenHash.setDeletedAt(LocalDateTime.now());
 
     }
 
