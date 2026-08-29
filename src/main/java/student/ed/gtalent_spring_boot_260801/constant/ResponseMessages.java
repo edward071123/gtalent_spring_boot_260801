@@ -36,6 +36,9 @@ public final class ResponseMessages {
     public static final String MEMBER_CONFIRM_PASSWORD_NOT_MATCH = "10021"; // 會員確認密碼不一致。
     public static final String MEMBER_ACCOUNT_EXISTS    = "10022"; // 會員帳號已存在。
     public static final String REFRESH_TOKEN_REQUIRED   = "10023"; // refresh token 未填。
+    public static final String MEMBER_ACCOUNT_OR_EMAIL_REQUIRED = "10024"; // 忘記密碼帳號或 email 未填。
+    public static final String MEMBER_ACCOUNT_OR_EMAIL_MAX = "10025"; // 忘記密碼帳號或 email 過長。
+    public static final String PASSWORD_RESET_TOKEN_REQUIRED = "10026"; // 重設密碼 token 未填。
 
     // 20000 區間：資料庫寫入相關錯誤。
     public static final String DATABASE_WRITE_FAILED    = "20000";
@@ -52,6 +55,7 @@ public final class ResponseMessages {
     public static final String TOKEN_INVALID            = "40004"; // token 不合法。
     public static final String TOKEN_EXPIRED            = "40005"; // token 已過期。
     public static final String TOKEN_REQUIRED           = "40006"; // token 未填。
+    public static final String PASSWORD_RESET_TOKEN_INVALID = "40007"; // 重設密碼 token 不合法或已過期。
     
     // 50000 區間：外接第三方服務通知相關錯誤。
     public static final String MAIL_SEND_FAILED         = "50000"; // 電子郵件寄送失敗。
@@ -87,6 +91,9 @@ public final class ResponseMessages {
         messages.put(MEMBER_CONFIRM_PASSWORD_NOT_MATCH, "確認密碼不一致");
         messages.put(MEMBER_ACCOUNT_EXISTS, "會員帳號已存在");
         messages.put(REFRESH_TOKEN_REQUIRED, "refresh token 必填");
+        messages.put(MEMBER_ACCOUNT_OR_EMAIL_REQUIRED, "帳號或 email 必填");
+        messages.put(MEMBER_ACCOUNT_OR_EMAIL_MAX, "帳號或 email 不可超過 128 個字");
+        messages.put(PASSWORD_RESET_TOKEN_REQUIRED, "重設密碼 token 必填");
         messages.put(DATABASE_WRITE_FAILED, "資料寫入失敗");
         messages.put(HTTP_REQUEST_FAILED,   "HTTP 其他相關的錯誤");
         messages.put(METHOD_NOT_ALLOWED,    "HTTP 方法不支援");
@@ -97,6 +104,7 @@ public final class ResponseMessages {
         messages.put(TOKEN_INVALID,         "token 不合法");
         messages.put(TOKEN_EXPIRED,         "token 已過期，請重新登入");
         messages.put(TOKEN_REQUIRED,        "token 必填");
+        messages.put(PASSWORD_RESET_TOKEN_INVALID, "重設密碼連結無效或已過期");
         messages.put(RESOURCE_NOT_FOUND,    "資料不存在");
         messages.put(MAIL_SEND_FAILED,      "電子郵件寄送失敗");
         return messages;

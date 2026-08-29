@@ -33,4 +33,18 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     public Optional<Member> findOneByAccountAndStatus(
             @Param("account") String account
     );
+
+    // 忘記密碼可輸入帳號；只允許啟用中的會員重設。
+    @Query(
+            value = """
+                    SELECT * FROM members
+                    WHERE status = 1
+                      AND account = :accountOrEmail
+                    LIMIT 1
+                    """,
+            nativeQuery = true
+    )
+    public Optional<Member> findOneByAccountOrEmailAndStatus(
+            @Param("accountOrEmail") String accountOrEmail
+    );
 }

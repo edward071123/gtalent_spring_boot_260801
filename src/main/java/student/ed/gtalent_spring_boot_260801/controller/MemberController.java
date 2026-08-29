@@ -12,7 +12,9 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
+import student.ed.gtalent_spring_boot_260801.request.MemberForgotPasswordRequest;
 import student.ed.gtalent_spring_boot_260801.request.MemberPasswordUpdateRequest;
+import student.ed.gtalent_spring_boot_260801.request.MemberPasswordResetRequest;
 import student.ed.gtalent_spring_boot_260801.request.MemberProfileUpdateRequest;
 import student.ed.gtalent_spring_boot_260801.request.MemberRegisterRequest;
 import student.ed.gtalent_spring_boot_260801.response.ApiResponse;
@@ -77,6 +79,24 @@ public class MemberController {
     @ResponseStatus(HttpStatus.OK)
     public TokenResponse login(@Valid @RequestBody MemberLoginRequest request) {
         return memberService.login(request);
+    }
+
+    @PostMapping("/forgot-password")
+    @ResponseStatus(HttpStatus.OK)
+    public ApiResponse forgotPassword(@Valid @RequestBody MemberForgotPasswordRequest request) {
+        // 忘記密碼第一步：使用者輸入帳號或 email 後，由 service 判斷是否需要寄重設信。
+        // 這裡固定回成功訊息，不把「帳號是否存在」透露給前端。
+        memberService.forgotPassword(request);
+        return new ApiResponse("若帳號存在，將寄送重設密碼信");
+    }
+
+    @PostMapping("/reset-password")
+    @ResponseStatus(HttpStatus.OK)
+    public ApiResponse resetPassword(@Valid @RequestBody MemberPasswordResetRequest request) {
+        // 忘記密碼第二步：使用者從 email 連結帶 token 回來，送出新密碼。
+        // token 驗證、密碼加密、token 標記已使用都交給 service 在同一個 transaction 內完成。
+        memberService.resetPassword(request);
+        return new ApiResponse("密碼重設成功，請重新登入");
     }
 
     @PostMapping("/logout")
