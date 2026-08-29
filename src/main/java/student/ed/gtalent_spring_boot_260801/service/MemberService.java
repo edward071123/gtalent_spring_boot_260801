@@ -27,6 +27,7 @@ import student.ed.gtalent_spring_boot_260801.entity.Member;
 import student.ed.gtalent_spring_boot_260801.entity.PasswordResetToken;
 import student.ed.gtalent_spring_boot_260801.repository.AuthTokenRepository;
 import student.ed.gtalent_spring_boot_260801.repository.MemberRepository;
+import student.ed.gtalent_spring_boot_260801.repository.PasswordResetTokenRepository;
 import student.ed.gtalent_spring_boot_260801.exception.MemberAccountExcption;
 import student.ed.gtalent_spring_boot_260801.exception.ResourceNotFoundException;
 
@@ -36,7 +37,9 @@ public class MemberService {
     private MemberRepository repository;
     private PasswordEncoder passwordEncoder;
     private JwtService jwtService;
+    private MailService mailService;
     private AuthTokenRepository authTokenRepository;
+    private PasswordResetTokenRepository passwordResetTokenRepository;
     private Byte TOKEN_REVOKED = 1;
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private String appBaseUrl;
@@ -46,13 +49,17 @@ public class MemberService {
             MemberRepository repository,
             PasswordEncoder passwordEncoder,
             JwtService jwtService,
+            MailService mailService,
             AuthTokenRepository authTokenRepository,
+            PasswordResetTokenRepository passwordResetTokenRepository,
             @Value("${app.base-url}") String appBaseUrl,
             @Value("${member.password-reset-token-minutes}") long passwordResetTokenMinutes) {
         this.repository = repository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.mailService = mailService;
         this.authTokenRepository = authTokenRepository;
+        this.passwordResetTokenRepository = passwordResetTokenRepository;
         this.appBaseUrl = appBaseUrl;
         this.passwordResetTokenMinutes = passwordResetTokenMinutes;
     }
@@ -281,9 +288,13 @@ public class MemberService {
         // 4. 把link = app_url + token 組合起來, 寄信給使用者
         // ex: http://localhost:8080/members-resset-password?token=xxxxxxxx
 
-         // appBaseUrl 是網站對外網址，例如 http://localhost:8080 或正式站 https://example.com。
+        // appBaseUrl 是網站對外網址，例如 http://localhost:8080 或正式站 https://example.com。
         // email 必須放完整 URL，使用者點擊後才會回到本系統的重設密碼頁。
-        String resetLink = appBaseUrl + "/page/reset-password?token=" + rawToken;
+        // String resetLink = appBaseUrl + "/page/reset-password?token=" + rawToken;
+
+        String resetLink = """
+            %s/page/reset-password?token=%s
+        """.formatted(appBaseUrl, rawToken);
 
         // 信件內容只放重設連結與有效時間。
         // 不把密碼、會員 id 或 token hash 放進信中。
