@@ -70,7 +70,7 @@ public class BookController {
         // map(BookResponse::new)：每一筆 Book 都執行 new BookResponse(book)，轉成只包含id、name、price  的 DTO。
         // toList()：把轉換後的 BookResponse 收集回 List<BookResponse>。
         List<BookResponse> bookResponses = books.stream()
-                .map(BookResponse::new)
+                .map(book -> new BookResponse(book, bookOrderService.isBookSold(book.getId())))
                 .toList();
 
         long totalElements = repository.countAll();

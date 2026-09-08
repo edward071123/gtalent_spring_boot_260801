@@ -67,6 +67,11 @@
             text-align: right;
         }
 
+        .action {
+            width: 120px;
+            text-align: right;
+        }
+
         button {
             padding: 10px 14px;
             border: 1px solid #bcccdc;
@@ -75,6 +80,23 @@
             color: #1f2933;
             font-weight: 700;
             cursor: pointer;
+        }
+
+        .buy-button {
+            border-color: #1769aa;
+            background: #1769aa;
+            color: #ffffff;
+        }
+
+        .buy-button:disabled {
+            cursor: not-allowed;
+            opacity: 0.65;
+        }
+
+        .sold-button {
+            border-color: #cbd5e1;
+            background: #e2e8f0;
+            color: #64748b;
         }
 
         .message {
@@ -134,6 +156,7 @@
             <th>ID</th>
             <th>書名</th>
             <th class="price">價格</th>
+            <th class="action">操作</th>
         </tr>
         </thead>
         <tbody id="booksBody"></tbody>
@@ -273,16 +296,93 @@
         books.forEach(function (book) {
             // 使用 jQuery 建立 <tr> 和 <td>，再把文字放進每個欄位。
             // .text(...) 會把內容當成純文字，可以避免 HTML 被直接插入頁面。
+            const buyButton = $("<button>")
+                .addClass(book.sold ? "sold-button" : "buy-button")
+                .attr("type", "button")
+                .attr("data-book-id", book.id)
+                .prop("disabled", book.sold)
+                .text(book.sold ? "已賣出" : "購買");
+
             $("<tr>")
                 .append($("<td>").text(book.id))
                 .append($("<td>").text(book.name))
                 .append($("<td>").addClass("price").text(book.price))
+                .append($("<td>").addClass("action").append(buyButton))
                 .appendTo(body);
         });
 
         // 有資料時隱藏訊息區，並顯示書籍表格。
         $("#message").prop("hidden", true);
         $("#booksTable").prop("hidden", false);
+    }
+
+    // 點擊「購買」後的流程：
+    // 1. 先呼叫 POST /books/{bookId}/orders，由後端建立 book_orders 與 payments。
+    // 2. 再用回傳的 paymentId 呼叫 POST /payments/{paymentId}/newebpay/form。
+    // 3. 後端回傳藍新需要的 MerchantID、Version、TradeInfo、TradeSha、gatewayUrl。
+    // 4. 前端動態建立一個 hidden form，用 POST 將資料送到藍新付款頁。
+    function buyBook(bookId, button) {
+        button.prop("disabled", true).text("建立訂單");
+        $("#message").prop("hidden", true).removeClass("error");
+
+        const orderRequest = apiAjax({
+            url: `/books/${bookId}/orders`,
+            method: "POST"
+        });
+
+        if (!orderRequest) {
+            return;
+        }
+
+        orderRequest
+            .then(function (orderData, textStatus, xhr) {
+                saveNewTokens(xhr);
+                button.text("前往付款");
+
+                return apiAjax({
+                    url: `/payments/${orderData.paymentId}/newebpay/form`,
+                    method: "POST"
+                });
+            })
+            .done(function (formData, textStatus, xhr) {
+                saveNewTokens(xhr);
+                submitNewebPayForm(formData);
+            })
+            .fail(function (xhr) {
+                const data = xhr.responseJSON || {};
+                $("#message")
+                    .text(data.message || "建立付款資料失敗")
+                    .addClass("error")
+                    .prop("hidden", false);
+                button.prop("disabled", false).text("購買");
+            });
+    }
+
+    // 藍新 MPG 付款頁要求使用 POST form 導頁，不能用一般 AJAX 取代。
+    // 這裡把後端產生的加密欄位塞進 hidden input，再 submit 到 gatewayUrl。
+    function submitNewebPayForm(formData) {
+        const form = $("<form>")
+            .attr("method", "POST")
+            .attr("action", formData.gatewayUrl)
+            .css("display", "none");
+
+        const fields = {
+            MerchantID: formData.merchantId,
+            Version: formData.version,
+            TradeInfo: formData.tradeInfo,
+            TradeSha: formData.tradeSha
+        };
+
+        Object.entries(fields).forEach(function ([name, value]) {
+            $("<input>")
+                .attr("type", "hidden")
+                .attr("name", name)
+                .val(value)
+                .appendTo(form);
+        });
+
+        form.appendTo("body");
+        form.trigger("submit");
     }
 
     // 更新分頁區塊的文字與按鈕狀態。
@@ -326,6 +426,13 @@
     $("#pageSize").on("change", function () {
         currentPage = 1;
         loadBooks();
+    });
+
+    // 使用事件委派處理動態產生的購買按鈕。
+    $("#booksBody").on("click", ".buy-button", function () {
+        const button = $(this);
+        const bookId = button.data("book-id");
+        buyBook(bookId, button);
     });
 
     // 點「登出」時，通知後端讓 refresh token 失效。

@@ -11,4 +11,6 @@ public interface BookOrderRepository extends JpaRepository<BookOrder, Long> {
     public Optional<BookOrder> findByOrderNo(String orderNo);
 
     public boolean existsByOrderNo(String orderNo);
+
+    public boolean existsByBookIdAndOrderStatus(Long bookId, String orderStatus);
 }
