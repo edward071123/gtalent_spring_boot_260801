@@ -115,6 +115,14 @@ public class GlobalExceptionHandler {
                 buildErrors(exception));
     }
 
+    // 處理書籍訂單相關業務錯誤，例如書籍已賣出不能再次建立訂單。
+    @ExceptionHandler(BookOrderException.class)
+    @ResponseStatus(HttpStatus.UNPROCESSABLE_CONTENT)
+    public ApiResponse handleBookOrderException(BookOrderException exception) {
+        String message = ResponseMessages.getMessage(ResponseMessages.VALIDATION_FAILED);
+        return new ApiResponse(message, buildErrors(exception));
+    }
+
     private Map<String, String> buildErrors(ApiException exception) {
         Map<String, String> errors = new TreeMap<>();
         errors.put(exception.getErrorKey(), ResponseMessages.getMessage(exception.getMessageCode()));

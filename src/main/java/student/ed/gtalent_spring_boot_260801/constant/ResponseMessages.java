@@ -55,6 +55,7 @@ public final class ResponseMessages {
     public static final String TOKEN_EXPIRED            = "40005"; // token 已過期。
     public static final String TOKEN_REQUIRED           = "40006"; // token 未填。
     public static final String PASSWORD_RESET_TOKEN_INVALID = "40007"; // 重設密碼 token 不合法或已過期。
+    public static final String BOOK_ALREADY_SOLD        = "40008"; // 書籍已賣出。
     
     // 50000 區間：外接第三方服務通知相關錯誤。
     public static final String MAIL_SEND_FAILED         = "50000"; // 電子郵件寄送失敗。
@@ -101,6 +102,7 @@ public final class ResponseMessages {
         messages.put(TOKEN_EXPIRED,         "token 已過期，請重新登入");
         messages.put(TOKEN_REQUIRED,        "token 必填");
         messages.put(RESOURCE_NOT_FOUND,    "資料不存在");
+        messages.put(BOOK_ALREADY_SOLD,     "書籍已賣出");
         messages.put(MAIL_SEND_FAILED, "電子郵件寄送失敗");
         messages.put(MEMBER_ACCOUNT_OR_EMAIL_REQUIRED, "帳號或 email 必填");
         messages.put(MEMBER_ACCOUNT_OR_EMAIL_MAX, "帳號或 email 不可超過 128 個字");

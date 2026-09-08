@@ -11,6 +11,7 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
+import student.ed.gtalent_spring_boot_260801.constant.NotifyStatus;
 import student.ed.gtalent_spring_boot_260801.constant.PaymentProviders;
 
 @Getter
@@ -36,7 +37,7 @@ public class PaymentNotification {
     private String providerTradeNo;
 
     @Column(name = "notify_status", nullable = false, length = 32)
-    private String notifyStatus = "RECEIVED";
+    private String notifyStatus = NotifyStatus.RECEIVED;
 
     @Column(name = "raw_payload", nullable = false, columnDefinition = "TEXT")
     private String rawPayload;

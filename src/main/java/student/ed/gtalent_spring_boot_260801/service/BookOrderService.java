@@ -9,10 +9,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.persistence.NoResultException;
+import student.ed.gtalent_spring_boot_260801.constant.OrderStatus;
 import student.ed.gtalent_spring_boot_260801.constant.ResponseMessages;
 import student.ed.gtalent_spring_boot_260801.entity.Book;
 import student.ed.gtalent_spring_boot_260801.entity.BookOrder;
 import student.ed.gtalent_spring_boot_260801.entity.Payment;
+import student.ed.gtalent_spring_boot_260801.exception.BookOrderException;
 import student.ed.gtalent_spring_boot_260801.exception.ResourceNotFoundException;
 import student.ed.gtalent_spring_boot_260801.repository.BookOrderRepository;
 import student.ed.gtalent_spring_boot_260801.repository.BookRepository;
@@ -42,6 +44,9 @@ public class BookOrderService {
     public BookOrderCreateResponse createBookOrder(Long bookId, Long buyerMemberId) {
         // 先確認書籍存在且未被軟刪除；不存在就不要建立任何訂單或付款資料。
         Book book = findActiveBook(bookId);
+        if (isBookSold(book.getId())) {
+            throw new BookOrderException("book", ResponseMessages.BOOK_ALREADY_SOLD);
+        }
 
         // orderNo 會同時作為系統訂單編號與藍新的 MerchantOrderNo，方便後續回呼對帳。
         String orderNo = generateOrderNo();
@@ -56,6 +61,10 @@ public class BookOrderService {
 
         // @Transactional 確保訂單與付款紀錄要嘛一起成功，要嘛一起回滾，避免只有訂單沒有付款資料。
         return new BookOrderCreateResponse(order, payment);
+    }
+
+    public boolean isBookSold(Long bookId) {
+        return bookOrderRepository.existsByBookIdAndOrderStatus(bookId, OrderStatus.PAID);
     }
 
     private Book findActiveBook(Long bookId) {
