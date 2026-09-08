@@ -6,8 +6,14 @@ import student.ed.gtalent_spring_boot_260801.repository.BookRepository;
 import student.ed.gtalent_spring_boot_260801.request.BookCreateRequest;
 
 import student.ed.gtalent_spring_boot_260801.response.ApiResponse;
+import student.ed.gtalent_spring_boot_260801.response.BookOrderCreateResponse;
 import student.ed.gtalent_spring_boot_260801.response.BookResponse;
 import student.ed.gtalent_spring_boot_260801.response.PageResponse;
+import student.ed.gtalent_spring_boot_260801.constant.ResponseMessages;
+import student.ed.gtalent_spring_boot_260801.exception.AuthException;
+import student.ed.gtalent_spring_boot_260801.exception.ResourceNotFoundException;
+import student.ed.gtalent_spring_boot_260801.interceptor.AuthInterceptor;
+import student.ed.gtalent_spring_boot_260801.service.BookOrderService;
 import student.ed.gtalent_spring_boot_260801.service.MailService;
 
 import org.springframework.http.HttpStatus;
@@ -22,11 +28,16 @@ import java.util.List;
 public class BookController {
 
     private final BookRepository repository;
+    private final BookOrderService bookOrderService;
     private MailService mailService;
     private String toMailAddress = "leonardo071123@gmail.com";
     // 注入式
-    public BookController(BookRepository repository, MailService mailService) {
+    public BookController(
+            BookRepository repository,
+            BookOrderService bookOrderService,
+            MailService mailService) {
         this.repository = repository;
+        this.bookOrderService = bookOrderService;
         this.mailService = mailService;
     }
 
@@ -112,5 +123,29 @@ public class BookController {
         mailService.sendEmail(this.toMailAddress, "刪除書籍通知", "刪除書籍成功，書id：" + id);
         return new ApiResponse("刪除書籍成功");
     }
-}
 
+    // 建立書籍購買訂單，後續會用這筆 payment 產生藍新付款表單。
+    // 目前不需要 BookCreateOrderRequest，因為建立訂單不信任前端傳入的會員與金額資料：
+    // 1. bookId 從 URL path 取得，例如 POST /books/1/orders。
+    // 2. buyerMemberId 從 JWT 驗證後的 request attribute 取得，避免前端假冒其他會員下單。
+    // 3. amount 由 service 依 bookId 查詢 books.price 後建立價格快照，避免前端竄改付款金額。
+    // 如果之後建立訂單時要讓使用者選付款方式，再新增 request class 承接 paymentMethod。
+    @PostMapping("/{bookId}/orders")
+    @ResponseStatus(HttpStatus.CREATED)
+    public BookOrderCreateResponse createOrder(
+            @PathVariable Long bookId,
+            // buyerMemberId 業務上必填，來源是 AuthInterceptor 驗完 JWT 後放入的 request attribute。
+            // 這裡 required = false 是刻意的：如果 attribute 不存在，讓下面自己丟 AuthException，
+            // 才會走專案統一的 token 錯誤格式，而不是先被 Spring MVC 轉成通用 HTTP 錯誤。
+            @RequestAttribute(name = AuthInterceptor.AUTH_MEMBER_ID_ATTRIBUTE, required = false) Long buyerMemberId) {
+        if (bookId == null || bookId < 1) {
+            throw new ResourceNotFoundException("book", ResponseMessages.BOOK_NOT_FOUND);
+        }
+
+        if (buyerMemberId == null) {
+            throw new AuthException("token", ResponseMessages.TOKEN_INVALID);
+        }
+
+        return bookOrderService.createBookOrder(bookId, buyerMemberId);
+    }
+}
