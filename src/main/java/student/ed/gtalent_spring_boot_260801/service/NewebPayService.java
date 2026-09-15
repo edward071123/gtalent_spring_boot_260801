@@ -105,7 +105,7 @@ public class NewebPayService {
         String tradeSha = null;
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            tradeSha =  toHex(digest.digest(HASHS.getBytes(StandardCharsets.UTF_8))).toUpperCase();
+            tradeSha =  toHex(digest.digest(HASHS.getBytes(StandardCharsets.UTF_8)));
         } catch (NoSuchAlgorithmException exception) {
             throw new IllegalStateException("SHA-256 is not available", exception);
         }
