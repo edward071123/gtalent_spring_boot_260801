@@ -16,32 +16,45 @@ import org.springframework.web.servlet.view.RedirectView;
 import student.ed.gtalent_spring_boot_260801.constant.ResponseMessages;
 import student.ed.gtalent_spring_boot_260801.interceptor.AuthInterceptor;
 import student.ed.gtalent_spring_boot_260801.exception.AuthException;
+import student.ed.gtalent_spring_boot_260801.exception.ResourceNotFoundException;
+import student.ed.gtalent_spring_boot_260801.service.BookOrderService;
 import student.ed.gtalent_spring_boot_260801.service.NewebPayService;
+import student.ed.gtalent_spring_boot_260801.response.BookOrderCreateResponse;
 import student.ed.gtalent_spring_boot_260801.response.NewebPayPaymentFormResponse;
 
 
 @RestController
 @RequestMapping("/payments")
 public class PaymentController {
+    private final BookOrderService bookOrderService;
     private final NewebPayService newebPayService;
 
-    public PaymentController(NewebPayService newebPayService) {
+    public PaymentController(BookOrderService bookOrderService, NewebPayService newebPayService) {
+        this.bookOrderService = bookOrderService;
         this.newebPayService = newebPayService;
     }
 
-    // 建立藍新付款表單資料。
-    // 這支 API 需要會員登入，buyerMemberId 由 AuthInterceptor 從 JWT 驗證後放入 request attribute。
-    // 回傳資料給前端後，前端要用 POST form 送到 gatewayUrl，欄位包含 MerchantID、Version、TradeInfo、TradeSha。
-    @PostMapping("/{paymentId}/newebpay/form")
+    // 一段式建立藍新付款表單。
+    // 前端按「購買」後可以直接呼叫這支 API：
+    // 1. AuthInterceptor 先從 JWT 取出 buyerMemberId 並放進 request attribute。
+    // 2. 這裡建立 book_orders 與 payments。
+    // 3. 再立刻用新建立的 paymentId 產生藍新 MPG 表單資料。
+    @PostMapping("books/{bookId}/newebpay/form")
     @ResponseStatus(HttpStatus.OK)
-    public NewebPayPaymentFormResponse createNewebPayForm(
-            @PathVariable Long paymentId,                           
+    public NewebPayPaymentFormResponse createBookOrderAndNewebPayForm(
+            @PathVariable Long bookId,                           
             @RequestAttribute(name = AuthInterceptor.AUTH_MEMBER_ID_ATTRIBUTE, required = false) Long buyerMemberId) {
         if (buyerMemberId == null) {
             throw new AuthException("token", ResponseMessages.TOKEN_INVALID);
         }
 
-        return newebPayService.createPaymentForm(paymentId, buyerMemberId);
+        if (bookId == null || bookId < 1) {
+            throw new ResourceNotFoundException("book", ResponseMessages.BOOK_NOT_FOUND);
+        }
+
+        BookOrderCreateResponse order = bookOrderService.createBookOrder(bookId, buyerMemberId);
+
+        return newebPayService.createPaymentForm(order.getPaymentId(), buyerMemberId);
     }
 
 
