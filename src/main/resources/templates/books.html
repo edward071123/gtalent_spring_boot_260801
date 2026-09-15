@@ -316,34 +316,22 @@
         $("#booksTable").prop("hidden", false);
     }
 
-    // 點擊「購買」後的流程：
-    // 1. 先呼叫 POST /books/{bookId}/orders，由後端建立 book_orders 與 payments。
-    // 2. 再用回傳的 paymentId 呼叫 POST /payments/{paymentId}/newebpay/form。
-    // 3. 後端回傳藍新需要的 MerchantID、Version、TradeInfo、TradeSha、gatewayUrl。
-    // 4. 前端動態建立一個 hidden form，用 POST 將資料送到藍新付款頁。
+    // 點擊「購買」後，直接呼叫後端一段式 API。
+    // 後端會建立 book_orders / payments，並回傳藍新需要的表單欄位。
     function buyBook(bookId, button) {
-        button.prop("disabled", true).text("建立訂單");
+        button.prop("disabled", true).text("前往付款");
         $("#message").prop("hidden", true).removeClass("error");
 
-        const orderRequest = apiAjax({
-            url: `/books/${bookId}/orders`,
+        const formRequest = apiAjax({
+            url: `/payments/books/${bookId}/newebpay/form`,
             method: "POST"
         });
 
-        if (!orderRequest) {
+        if (!formRequest) {
             return;
         }
 
-        orderRequest
-            .then(function (orderData, textStatus, xhr) {
-                saveNewTokens(xhr);
-                button.text("前往付款");
-
-                return apiAjax({
-                    url: `/payments/${orderData.paymentId}/newebpay/form`,
-                    method: "POST"
-                });
-            })
+        formRequest
             .done(function (formData, textStatus, xhr) {
                 saveNewTokens(xhr);
                 submitNewebPayForm(formData);
