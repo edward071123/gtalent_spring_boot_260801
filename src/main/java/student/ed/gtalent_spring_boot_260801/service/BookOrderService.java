@@ -4,6 +4,9 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ThreadLocalRandom;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
 import jakarta.persistence.NoResultException;
 import student.ed.gtalent_spring_boot_260801.constant.OrderStatus;
 import student.ed.gtalent_spring_boot_260801.constant.ResponseMessages;
@@ -18,19 +21,22 @@ import student.ed.gtalent_spring_boot_260801.repository.BookOrderRepository;
 import student.ed.gtalent_spring_boot_260801.repository.BookRepository;
 import student.ed.gtalent_spring_boot_260801.repository.PaymentRepository;
 
+@Service
 public class BookOrderService {
     private final BookRepository bookRepository;
     private final BookOrderRepository bookOrderRepository;
     private final PaymentRepository paymentRepository;
-    private final String newebpayMerchantId = System.getenv("NEWEBPAY_MERCHANT_ID");
+    private final String newebpayMerchantId;
 
     public BookOrderService(
         BookRepository bookRepository,
         BookOrderRepository bookOrderRepository,
-        PaymentRepository paymentRepository) {
+        PaymentRepository paymentRepository,
+        @Value("${newebpay.merchant-id}") String newebpayMerchantId) {
             this.bookRepository = bookRepository;
             this.bookOrderRepository = bookOrderRepository;
             this.paymentRepository = paymentRepository;
+            this.newebpayMerchantId = newebpayMerchantId;
         }
 
     public BookOrderCreateResponse createBookOrder(Long bookId, Long buyerMemberId) {
@@ -60,7 +66,7 @@ public class BookOrderService {
     }
 
     public boolean isBookSold(Long bookId) {
-        return bookOrderRepository.existsByBookIdAndOrderStatus(bookId, OrderStatus.PAID);
+        return bookOrderRepository.countByBookIdAndOrderStatus(bookId, OrderStatus.PAID) > 0;
     }
 
     // 先確認書籍存在且未被軟刪除；不存在就不要建立任何訂單或付款資料。
@@ -86,7 +92,7 @@ public class BookOrderService {
 
             // 時間戳加亂數已經能大幅降低重複機率，但高併發下仍不是絕對不會碰撞。
             // 因此每次產生後都查一次 DB，確認 order_no 尚未存在；若已存在就重新產生。
-        } while (bookOrderRepository.existsByOrderNo(orderNo));
+        } while (bookOrderRepository.countByOrderNo(orderNo) > 0);
 
         return orderNo;
     }

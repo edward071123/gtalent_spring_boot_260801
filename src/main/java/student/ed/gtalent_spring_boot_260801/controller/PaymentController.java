@@ -54,7 +54,7 @@ public class PaymentController {
 
         BookOrderCreateResponse order = bookOrderService.createBookOrder(bookId, buyerMemberId);
 
-        return newebPayService.createPaymentForm(order.getPaymentId(), buyerMemberId);
+        return newebPayService.createPaymentForm(order.getPaymentId());
     }
 
 
