@@ -9,10 +9,13 @@ public class BookResponse {
 
     private Integer price;
 
-    public BookResponse(Book book) {
+    private String purchaseStatus;
+
+    public BookResponse(Book book, String purchaseStatus) {
         this.id = book.getId();
         this.name = book.getName();
         this.price = book.getPrice();
+        this.purchaseStatus = purchaseStatus;
     }
 
     public Long getId() {
@@ -25,6 +28,10 @@ public class BookResponse {
 
     public Integer getPrice() {
         return price;
+    }
+
+    public String getPurchaseStatus() {
+        return purchaseStatus;
     }
 
 }

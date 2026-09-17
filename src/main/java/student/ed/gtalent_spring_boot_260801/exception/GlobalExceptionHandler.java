@@ -90,6 +90,15 @@ public class GlobalExceptionHandler {
         return new ApiResponse(message, buildErrors(exception));
     }
 
+    // 處理建立訂單時書籍已售出的情況。
+    @ExceptionHandler(BookOrderException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiResponse handleBookOrderException(BookOrderException exception) {
+        return new ApiResponse(
+                ResponseMessages.getMessage(exception.getMessageCode()),
+                buildErrors(exception));
+    }
+
 
     // 處理寄信失敗，例如 SMTP 設定錯誤、帳密錯誤或 mail server 連線失敗。
     @ExceptionHandler(MailException.class)

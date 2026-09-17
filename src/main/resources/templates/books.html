@@ -67,6 +67,11 @@
             text-align: right;
         }
 
+        .action {
+            width: 120px;
+            text-align: center;
+        }
+
         button {
             padding: 10px 14px;
             border: 1px solid #bcccdc;
@@ -75,6 +80,20 @@
             color: #1f2933;
             font-weight: 700;
             cursor: pointer;
+        }
+
+        .buy-button {
+            min-width: 88px;
+            border-color: #2563eb;
+            background: #2563eb;
+            color: #ffffff;
+        }
+
+        .buy-button:disabled {
+            cursor: not-allowed;
+            border-color: #cbd5e1;
+            background: #e2e8f0;
+            color: #64748b;
         }
 
         .message {
@@ -134,6 +153,7 @@
             <th>ID</th>
             <th>書名</th>
             <th class="price">價格</th>
+            <th class="action">購買狀態</th>
         </tr>
         </thead>
         <tbody id="booksBody"></tbody>
@@ -207,15 +227,13 @@
             return null;
         }
 
-        return $.ajax({
-            ...options,
-            headers: {
-                // 保留呼叫端自己傳入的 headers，避免被下面的 token headers 覆蓋掉。
-                ...(options.headers || {}),
-                Authorization: `Bearer ${accessToken}`,
-                "X-Refresh-Token": refreshToken
-            }
+        const ajaxOptions = $.extend({}, options);
+        ajaxOptions.headers = $.extend({}, options.headers || {}, {
+            Authorization: `Bearer ${accessToken}`,
+            "X-Refresh-Token": refreshToken
         });
+
+        return $.ajax(ajaxOptions);
     }
 
     // 向後端取得書籍列表。
@@ -271,18 +289,107 @@
         }
 
         books.forEach(function (book) {
+            const purchaseStatus = book.purchaseStatus || "AVAILABLE";
+            const isSold = purchaseStatus === "PAID";
+            const isPurchasing = purchaseStatus === "PENDING_PAYMENT";
+            const buttonText = isSold ? "已售出" : (isPurchasing ? "購買中" : "購買");
+            const buyButton = $("<button>", {
+                type: "button",
+                class: "buy-button",
+                text: buttonText,
+                disabled: isSold || isPurchasing
+            }).attr("data-book-id", book.id);
+
             // 使用 jQuery 建立 <tr> 和 <td>，再把文字放進每個欄位。
             // .text(...) 會把內容當成純文字，可以避免 HTML 被直接插入頁面。
             $("<tr>")
                 .append($("<td>").text(book.id))
                 .append($("<td>").text(book.name))
                 .append($("<td>").addClass("price").text(book.price))
+                .append($("<td>").addClass("action").append(buyButton))
                 .appendTo(body);
         });
 
         // 有資料時隱藏訊息區，並顯示書籍表格。
         $("#message").prop("hidden", true);
         $("#booksTable").prop("hidden", false);
+    }
+
+    // 點擊購買後，以 AJAX 向本站後端建立訂單並取得藍新 MPG 表單資料。
+    $("#booksBody").on("click", ".buy-button", function () {
+        const button = $(this);
+        const bookId = button.attr("data-book-id");
+        const accessToken = getAccessToken();
+        const refreshToken = getRefreshToken();
+
+        if (!accessToken || !refreshToken) {
+            window.location.href = "/page/login";
+            return;
+        }
+
+        button.prop("disabled", true).text("購買中");
+
+        // 寫法與 login.html 相同，直接使用 jQuery $.ajax 的 callbacks。
+        $.ajax({
+            url: `/payments/books/${bookId}/newebpay/form`,
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                "X-Refresh-Token": refreshToken
+            },
+            success: function (data, textStatus, xhr) {
+                saveNewTokens(xhr);
+                submitNewebPayForm(data);
+            },
+            error: function (xhr) {
+                saveNewTokens(xhr);
+                const data = xhr.responseJSON || {};
+                const bookError = data.errors && data.errors.book;
+                const errorMessage = bookError || data.message || "建立付款資料失敗";
+
+                $("#message").text(errorMessage).addClass("error").prop("hidden", false);
+
+                // 若後端表示已售出，保持按鈕停用；其他錯誤允許使用者稍後重試。
+                if (errorMessage.includes("已售出")) {
+                    button.prop("disabled", true).text("已售出");
+                } else {
+                    button.prop("disabled", false).text("購買");
+                }
+            }
+        });
+    });
+
+    // 藍新 MPG 需要瀏覽器用 form POST 導向 gateway；表單資料本身由前一步 AJAX 取得。
+    function submitNewebPayForm(paymentForm) {
+        if (!paymentForm.gatewayUrl || !paymentForm.merchantId
+                || !paymentForm.version || !paymentForm.tradeInfo || !paymentForm.tradeSha) {
+            $("#message").text("付款表單資料不完整").addClass("error").prop("hidden", false);
+            loadBooks();
+            return;
+        }
+
+        const form = $("<form>", {
+            method: "POST",
+            action: paymentForm.gatewayUrl
+        }).css("display", "none");
+
+        const fields = {
+            MerchantID: paymentForm.merchantId,
+            Version: paymentForm.version,
+            TradeInfo: paymentForm.tradeInfo,
+            TradeSha: paymentForm.tradeSha
+        };
+
+        $.each(fields, function (name, value) {
+            form.append($("<input>", {
+                type: "hidden",
+                name: name,
+                value: value
+            }));
+        });
+
+        form.appendTo(document.body);
+        form.trigger("submit");
     }
 
     // 更新分頁區塊的文字與按鈕狀態。
