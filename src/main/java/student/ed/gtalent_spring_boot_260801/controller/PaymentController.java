@@ -1,14 +1,12 @@
 package student.ed.gtalent_spring_boot_260801.controller;
 
-import java.util.Map;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.view.RedirectView;
@@ -63,8 +61,8 @@ public class PaymentController {
     // service 會先保存原始通知，再驗證 TradeSha、解密 TradeInfo，最後更新付款與訂單狀態。
     @PostMapping("/newebpay/notify")
     @ResponseStatus(HttpStatus.OK)
-    public String notifyNewebPay(@RequestParam Map<String, String> formParams) {
-       return newebPayService.handleNotify(formParams);
+    public String notifyNewebPay(@RequestBody String rowBody) {
+       return newebPayService.handleNotify(rowBody);
     }
 
     // 藍新 ReturnURL：付款完成後，使用者瀏覽器被導回的入口。
