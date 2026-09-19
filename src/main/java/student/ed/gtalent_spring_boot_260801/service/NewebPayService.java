@@ -385,7 +385,7 @@ public class NewebPayService {
 
     // 依藍新規格產生 TradeSha：HashKey、TradeInfo、HashIV 串接後做 SHA-256 並轉成大寫。
     private String generateTradeSha(String tradeInfo) {
-        String source = "IV=" + hashIv + "&" + tradeInfo + "&Key=" + hashKey;
+        String source = "HashKey=" + hashKey + "&" + tradeInfo + "&HashIV=" + hashIv;
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             // 將 source 轉成 byte array 後做 SHA-256，最後再轉成大寫 hex 字串。
