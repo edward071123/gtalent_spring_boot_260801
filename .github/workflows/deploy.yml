@@ -1,4 +1,4 @@
-name: Test and deploy to AWS EC2
+name: Test and deploy to AWS EC2-1
 
 on:
   push:
