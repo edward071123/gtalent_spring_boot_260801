@@ -1,4 +1,4 @@
-name: Test and deploy to AWS EC2-123
+name: Test and deploy to AWS EC2-a1
 
 on:
   push:
