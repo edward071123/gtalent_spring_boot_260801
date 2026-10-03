@@ -33,7 +33,8 @@ public class WebConfig implements WebMvcConfigurer {
                         "/members/forgot-password",
                         "/members/reset-password",
                         "/payments/newebpay/notify",
-                        "/payments/newebpay/return"
+                        "/payments/newebpay/return",
+                        "/line/**"
                 );
     }
 }

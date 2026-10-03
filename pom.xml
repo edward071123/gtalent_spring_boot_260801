@@ -29,6 +29,7 @@
 	<properties>
 		<java.version>21</java.version>
 		<jjwt.version>0.12.6</jjwt.version>
+		<line.bot.sdk.version>10.1.0</line.bot.sdk.version>
 	</properties>
 	<dependencies>
 		<!-- Thymeleaf -->
@@ -97,6 +98,13 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webmvc</artifactId>
+		</dependency>
+
+		<!-- LINE Messaging API + Webhook handler for Spring WebMVC -->
+		<dependency>
+			<groupId>com.linecorp.bot</groupId>
+			<artifactId>line-bot-spring-boot-webmvc</artifactId>
+			<version>${line.bot.sdk.version}</version>
 		</dependency>
 
 		<dependency>
