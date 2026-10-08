@@ -222,7 +222,7 @@ public class NewebPayService {
             // 檢查付款單狀態是否為 PENDING，若不是就直接回傳 ERROR。
             if(!PaymentStatus.PENDING.equals(payment.getPaymentStatus())) {
                 notification.setNotifyStatus("FAILED");
-                notification.setErrorMessage("付款單狀態不是 PENDING，無法更新");
+                notification.setErrorMessage("付款單狀態不是 PENDING，無法更新!");
                 paymentNotificationRepository.save(notification);
                 return "ERROR";
             }
