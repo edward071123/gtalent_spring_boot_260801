@@ -30,6 +30,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import student.ed.gtalent_spring_boot_260801.entity.Member;
+import student.ed.gtalent_spring_boot_260801.entity.Book;
+import student.ed.gtalent_spring_boot_260801.repository.BookRepository;
 import student.ed.gtalent_spring_boot_260801.repository.MemberRepository;
 import student.ed.gtalent_spring_boot_260801.response.ExcelImportError;
 import student.ed.gtalent_spring_boot_260801.response.ExcelImportResponse;
@@ -37,8 +39,8 @@ import student.ed.gtalent_spring_boot_260801.response.ExcelImportResponse;
 @Service
 public class ExcelService {
 
-    private static final int MAX_ROWS = 5000;
-    private static final long MAX_FILE_SIZE = 5L * 1024 * 1024;
+    private static final int MAX_ROWS = 300000;
+    private static final long MAX_FILE_SIZE = 10L * 1024 * 1024;
 
     private static final String[] HEADERS = {
         "帳號", "姓名", "性別", "Email", "狀態", "密碼"
@@ -50,20 +52,24 @@ public class ExcelService {
         );
 
     private final MemberRepository memberRepository;
+    private final BookRepository bookRepository;
     private final PasswordEncoder passwordEncoder;
 
     public ExcelService(
             MemberRepository memberRepository,
+            BookRepository bookRepository,
             PasswordEncoder passwordEncoder) {
 
         this.memberRepository = memberRepository;
+        this.bookRepository = bookRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
-       public byte[] exportMembers() throws IOException {
+    public byte[] exportMembers() throws IOException {
 
 
        List<Member> members = memberRepository.findAll();
+       List<Book> books = bookRepository.findAll(1, Integer.MAX_VALUE);
 
 
        try (Workbook workbook = new XSSFWorkbook();
@@ -107,6 +113,31 @@ public class ExcelService {
 
            for (int i = 0; i < columns.length; i++) {
                sheet.autoSizeColumn(i);
+           }
+
+           Sheet bookSheet = workbook.createSheet("書籍資料");
+           Row bookHeader = bookSheet.createRow(0);
+           String[] bookColumns = {
+               "ID", "書名", "價格", "狀態"
+           };
+
+           for (int i = 0; i < bookColumns.length; i++) {
+               bookHeader.createCell(i).setCellValue(bookColumns[i]);
+           }
+
+           int bookRowNum = 1;
+
+           for (Book book : books) {
+               Row row = bookSheet.createRow(bookRowNum++);
+
+               row.createCell(0).setCellValue(book.getId());
+               row.createCell(1).setCellValue(book.getName());
+               row.createCell(2).setCellValue(book.getPrice());
+               row.createCell(3).setCellValue(book.getStatus());
+           }
+
+           for (int i = 0; i < bookColumns.length; i++) {
+               bookSheet.autoSizeColumn(i);
            }
 
 
