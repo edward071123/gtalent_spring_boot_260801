@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>即時訂單追蹤 (WebSocket)</title>
+    <!-- 引入 SockJS 與 STOMP 客戶端 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <style>
+        body { font-family: sans-serif; text-align: center; margin-top: 50px; }
+        #order-status { font-size: 28px; font-weight: bold; color: #007bff; margin: 20px 0; }
+        #connection-status { font-size: 14px; color: gray; }
+    </style>
+</head>
+<body>
+
+    <h1>即時訂單狀態追蹤</h1>
+    <div id="order-status">連線中...</div>
+    <div id="connection-status">網路狀態：正在連線...</div>
+
+    <script>
+        const orderId = 123; // 當前訂單編號
+        let stompClient = null;
+        let reconnectTimer = null;
+
+        function connectWebSocket() {
+            // 如果已經有舊連線，先安全關閉
+            if (stompClient !== null) {
+                stompClient.disconnect();
+            }
+
+            document.getElementById('connection-status').innerText = '網路狀態：連線中...';
+            document.getElementById('connection-status').style.color = 'orange';
+
+            // 連接到 Spring Boot 設定的端點
+            const socket = new SockJS('/ws-order');
+            stompClient = Stomp.over(socket);
+
+            // 關閉 STOMP 的 Debug 輸出保持主控台乾淨
+            stompClient.debug = null;
+
+            stompClient.connect({}, function (frame) {
+                console.log('Connected: ' + frame);
+                document.getElementById('connection-status').innerText = '網路狀態：即時連線正常';
+                document.getElementById('connection-status').style.color = 'green';
+
+                // 清除可能存在的重連計時器
+                if (reconnectTimer) {
+                    clearTimeout(reconnectTimer);
+                    reconnectTimer = null;
+                }
+
+                // 訂閱該訂單專屬的 Topic
+                stompClient.subscribe('/topic/order/' + orderId, function (messageOutput) {
+                    try {
+                        // 嘗試解析 JSON（以防後端傳送結構化物件）
+                        const data = JSON.parse(messageOutput.body);
+                        const status = data.status || messageOutput.body; // 若是純字串則直接取用
+                        updateUI(status);
+                    } catch (e) {
+                        // 如果不是 JSON，就當作純文字字串處理
+                        updateUI(messageOutput.body);
+                    }
+                });
+
+            }, function (error) {
+                console.error('連線中斷，嘗試重新連線...', error);
+                document.getElementById('connection-status').innerText = '網路狀態：連線中斷，5秒後自動重連...';
+                document.getElementById('connection-status').style.color = 'red';
+                
+                // 斷線重連機制（避免重複計時）
+                if (!reconnectTimer) {
+                    reconnectTimer = setTimeout(connectWebSocket, 5000);
+                }
+            });
+        }
+
+        function updateUI(status) {
+            const statusDiv = document.getElementById('order-status');
+            statusDiv.innerText = `目前狀態：${status}`;
+            
+            // 根據不同狀態切換顏色樣式
+            switch(status) {
+                case '待處理': statusDiv.style.color = '#ffc107'; break; // 黃色
+                case '製作中': statusDiv.style.color = '#17a2b8'; break; // 藍綠色
+                case '外送中': statusDiv.style.color = '#007bff'; break; // 藍色
+                case '已完成': statusDiv.style.color = '#28a745'; break; // 綠色
+                default: statusDiv.style.color = '#6c757d'; break;     // 預設灰色
+            }
+        }
+
+        // 頁面載入後啟動連線
+        window.onload = connectWebSocket;
+
+        // 當使用者準備離開頁面時，主動斷開連線釋放資源
+        window.addEventListener('beforeunload', function() {
+            if (stompClient !== null) {
+                stompClient.disconnect();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -58,5 +58,11 @@ public class PageController {
     public String ssePage() {
         return "sse";
     }
+
+    @GetMapping("/page/demo/websocket")
+    public String websocketPage() {
+        return "websocket";
+    }
+    
     
 }
