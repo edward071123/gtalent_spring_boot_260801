@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>訂單狀態追蹤 - SSE 模式</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; margin-top: 50px; }
+        #order-status { font-size: 28px; font-weight: bold; color: #ffc107; margin: 20px 0; }
+        .completed { color: #28a745 !important; }
+    </style>
+</head>
+<body>
+
+    <h1>即時訂單狀態追蹤 (SSE 模式)</h1>
+    <div id="order-status">連線建立中...</div>
+    <p id="connection-status" style="color: gray; font-size: 14px;"></p>
+
+    <script>
+        const orderId = 123; // 當前訂單編號
+        let eventSource = null;
+
+        function connectSSE() {
+            console.log('嘗試建立 SSE 連線...');
+            // 建立 EventSource 連線指向 Spring Boot 的 SSE 端點
+            eventSource = new EventSource(`/api/sse/orders/${orderId}`);
+            console.log('SSE 連線已建立，等待後端推送訊息...');
+            // 成功建立連線時觸發
+            eventSource.onopen = function(event) {
+                console.log('SSE 連線已成功建立。');
+                document.getElementById('connection-status').innerText = '狀態：即時連線正常';
+                document.getElementById('connection-status').style.color = 'green';
+            };
+            
+            // 接收到後端自訂事件（對應後端設定的 .name("status-update")）
+            eventSource.addEventListener('status-update', function(event) {
+                const status = event.data;
+                updateUI(status);
+            });
+
+            // 預設的 message 事件（如果後端沒有指定事件名稱，會走這裡）
+            eventSource.onmessage = function(event) {
+                console.log('收到訊息：', event.data);
+            };
+
+            // 發生錯誤或斷線時觸發
+            eventSource.onerror = function(event) {
+                console.error('SSE 連線異常，瀏覽器會自動嘗試重連...', event);
+                document.getElementById('connection-status').innerText = '狀態：連線中斷，正在自動重連...';
+                document.getElementById('connection-status').style.color = 'orange';
+                
+                // 註：EventSource 具備「內建自動重連機制」，不需要手動寫 setInterval 重新連線。
+            };
+        }
+
+        function updateUI(status) {
+            const statusDiv = document.getElementById('order-status');
+            statusDiv.innerText = `目前狀態：${status}`;
+
+            // 根據狀態切換顏色
+            switch(status) {
+                case '待處理': statusDiv.style.color = '#ffc107'; break;
+                case '製作中': statusDiv.style.color = '#17a2b8'; break;
+                case '外送中': statusDiv.style.color = '#007bff'; break;
+                case '已完成': 
+                    statusDiv.style.color = '#28a745';
+                    statusDiv.classList.add('completed');
+                    // 如果後端沒關閉連線，前端也可以手動關閉
+                    if (eventSource) {
+                        eventSource.close();
+                        document.getElementById('connection-status').innerText = '狀態：訂單已完成，連線已關閉';
+                    }
+                    break;
+            }
+        }
+
+        // 頁面載入後啟動 SSE
+        window.onload = connectSSE;
+
+        // 離開頁面時關閉連線，釋放後端資源
+        window.addEventListener('beforeunload', function() {
+            if (eventSource) {
+                eventSource.close();
+            }
+        });
+    </script>
+
+</body>
+</html>

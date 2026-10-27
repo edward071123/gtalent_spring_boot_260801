@@ -49,9 +49,14 @@ public class PageController {
         return "reset-password";
     }
 
-     @GetMapping("/page/demo/polling")
+    @GetMapping("/page/demo/polling")
     public String pollingPage() {
         return "polling";
+    }
+
+    @GetMapping("/page/demo/sse")
+    public String ssePage() {
+        return "sse";
     }
     
 }
