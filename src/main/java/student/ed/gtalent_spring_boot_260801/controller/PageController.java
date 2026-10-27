@@ -48,5 +48,10 @@ public class PageController {
         model.addAttribute("tokenValid", memberService.isPasswordResetTokenValid(token));
         return "reset-password";
     }
+
+     @GetMapping("/page/demo/polling")
+    public String pollingPage() {
+        return "polling";
+    }
     
 }

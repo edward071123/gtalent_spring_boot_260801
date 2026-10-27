@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>訂單狀態追蹤 - 輪詢 (Polling) 模式</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; margin-top: 50px; }
+        #order-status { font-size: 28px; font-weight: bold; color: #17a2b8; margin: 20px 0; }
+        .completed { color: #28a745 !important; }
+    </style>
+</head>
+<body>
+
+    <h1>即時訂單狀態追蹤 (輪詢模式)</h1>
+    <div id="order-status">載入中...</div>
+    <p id="update-time" style="color: gray; font-size: 14px;"></p>
+
+    <script>
+        const orderId = 123; // 當前查詢的訂單編號
+        const pollInterval = 3000; // 輪詢間隔：3000毫秒 (3秒)
+        let timer = null;
+
+        // 請求後端 API 取得最新狀態
+        async function fetchOrderStatus() {
+            try {
+                const response = await fetch(`/api/orders/${orderId}/status`);
+                
+                if (!response.ok) {
+                    throw new Error('網路回應錯誤');
+                }
+
+                const status = await response.text(); // 假設後端回傳純文字狀態
+                updateUI(status);
+
+                // 如果訂單已經完成，可以選擇停止輪詢，節省資源
+                if (status === '已完成') {
+                    stopPolling();
+                    console.log('訂單已完成，停止輪詢。');
+                }
+
+            } catch (error) {
+                console.error('取得訂單狀態失敗:', error);
+            }
+        }
+
+        // 更新畫面樣式
+        function updateUI(status) {
+            const statusDiv = document.getElementById('order-status');
+            const timeDiv = document.getElementById('update-time');
+
+            statusDiv.innerText = `目前狀態：${status}`;
+            
+            // 加上最後更新時間
+            const now = new Date().toLocaleTimeString();
+            timeDiv.innerText = `最後更新時間：${now}`;
+
+            // 狀態完成時改變顏色
+            if (status === '已完成') {
+                statusDiv.classList.add('completed');
+            }
+        }
+
+        // 開始輪詢
+        function startPolling() {
+            // 頁面載入後先立即執行一次
+            fetchOrderStatus();
+            
+            // 設定定時器重複執行
+            timer = setInterval(fetchOrderStatus, pollInterval);
+        }
+
+        // 停止輪詢（例如使用者離開頁面或訂單結束）
+        function stopPolling() {
+            if (timer) {
+                clearInterval(timer);
+                timer = null;
+            }
+        }
+
+        // 頁面載入完成後啟動
+        window.onload = startPolling;
+
+        // 當使用者切換分頁或離開頁面時，可以清理定時器避免浪費資源
+        window.addEventListener('beforeunload', stopPolling);
+    </script>
+
+</body>
+</html>
