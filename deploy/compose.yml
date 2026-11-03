@@ -1,0 +1,27 @@
+services:
+  app:
+    image: eclipse-temurin:21-jre
+    restart: unless-stopped
+    working_dir: /app
+    command: ["java", "-jar", "/app/app.jar"]
+    env_file:
+      - path: ./app.env
+        format: raw
+    environment:
+      SPRING_JPA_SHOW_SQL: "false"
+    volumes:
+      - ./target:/app:ro
+    ports:
+      - "127.0.0.1:8080:8080"
+    networks:
+      - database
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  database:
+    external: true
+    name: gtalent-network

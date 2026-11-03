@@ -67,6 +67,8 @@ jobs:
           NEWEBPAY_GATEWAY_URL: https://ccore.newebpay.com/MPG/mpg_gateway
           NEWEBPAY_NOTIFY_URL: http://localhost:8080/payments/newebpay/notify
           NEWEBPAY_RETURN_URL: http://localhost:8080/payments/newebpay/return
+          LINE_CHANNEL_ACCESS_TOKEN: ci-only-line-token
+          LINE_CHANNEL_SECRET: ci-only-line-secret
         run: |
           chmod +x mvnw
           ./mvnw --batch-mode --no-transfer-progress clean package
@@ -94,6 +96,8 @@ jobs:
         run: |
           test -n "$EC2_HOST"
           test -n "$EC2_USER"
+          ssh -i ~/.ssh/gtalent_deploy -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=10 \
+            "$EC2_USER@$EC2_HOST" '! systemctl is-active --quiet gtalent && test -f /home/ubuntu/gtalent_spring_boot_260801/app.env && test -f /home/ubuntu/gtalent_spring_boot_260801/compose.yml && docker compose version >/dev/null'
           scp \
             -i ~/.ssh/gtalent_deploy \
             -o BatchMode=yes \
@@ -101,6 +105,8 @@ jobs:
             -o ConnectTimeout=10 \
             target/app.jar \
             "$EC2_USER@$EC2_HOST:/home/ubuntu/gtalent_spring_boot_260801/target/app.jar.new"
+          scp -i ~/.ssh/gtalent_deploy -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=10 \
+            deploy/compose.yml "$EC2_USER@$EC2_HOST:/home/ubuntu/gtalent_spring_boot_260801/compose.yml.new"
 
       - name: Activate release and verify
         env:
@@ -117,32 +123,52 @@ jobs:
           CURRENT_JAR="$APP_DIR/target/app.jar"
           BACKUP_JAR="$APP_DIR/target/app.jar.previous"
           INCOMING_JAR="$APP_DIR/target/app.jar.new"
+          cd "$APP_DIR"
 
           test -s "$INCOMING_JAR"
+          test -s compose.yml.new
+          if systemctl is-active --quiet gtalent; then
+            echo "The systemd service is still running; aborting."
+            exit 1
+          fi
+          docker compose -f compose.yml.new config --quiet
 
           if test -f "$CURRENT_JAR"; then
             cp "$CURRENT_JAR" "$BACKUP_JAR"
           fi
+          cp compose.yml compose.yml.previous
 
           mv "$INCOMING_JAR" "$CURRENT_JAR"
-          sudo systemctl restart gtalent
+          mv compose.yml.new compose.yml
 
-          for attempt in $(seq 1 30); do
-            if curl --fail --silent --show-error \
-              http://127.0.0.1:8080/page/login > /dev/null; then
-              echo "Deployment succeeded."
-              exit 0
-            fi
-            sleep 2
-          done
+          if docker compose up -d --force-recreate; then
+            for attempt in $(seq 1 45); do
+              if curl --fail --silent --show-error \
+                http://127.0.0.1:8080/page/login > /dev/null; then
+                echo "Deployment succeeded."
+                exit 0
+              fi
+              sleep 2
+            done
+          fi
 
-          echo "Health check failed."
-          sudo journalctl -u gtalent -n 80 --no-pager || true
+          echo "Deployment failed; collecting logs."
+          docker compose logs --tail=80 app || true
 
           if test -f "$BACKUP_JAR"; then
             echo "Rolling back to the previous JAR."
             mv "$BACKUP_JAR" "$CURRENT_JAR"
-            sudo systemctl restart gtalent
+            mv compose.yml.previous compose.yml
+            if docker compose up -d --force-recreate; then
+              for attempt in $(seq 1 45); do
+                if curl --fail --silent --show-error http://127.0.0.1:8080/page/login > /dev/null; then
+                  echo "Previous version is responding."
+                  exit 1
+                fi
+                sleep 2
+              done
+            fi
+            echo "Rollback did not pass the health check; manual intervention is required."
           else
             echo "No previous JAR is available for rollback."
           fi
