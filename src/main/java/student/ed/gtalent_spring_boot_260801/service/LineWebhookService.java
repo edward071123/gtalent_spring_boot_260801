@@ -47,6 +47,7 @@ public class LineWebhookService {
                 throw exception;
             }
 
+            System.out.println("gemini-answer:" + answer);
             // String reply = switch (text.toLowerCase()) {
             //     case "ping" -> "pong";
             //     case "你好" -> "你好！我是群組機器人。";
