@@ -35,7 +35,8 @@ public class WebConfig implements WebMvcConfigurer {
                         "/payments/newebpay/notify",
                         "/payments/newebpay/return",
                         "/api/line/**",
-                        "/api/ai/**"
+                        "/api/ai/**",
+                        "/api/python/**"
                 );
     }
 }
