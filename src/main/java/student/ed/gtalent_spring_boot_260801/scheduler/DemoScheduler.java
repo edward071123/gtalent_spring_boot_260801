@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.util.logging.Logger;
+
 import student.ed.gtalent_spring_boot_260801.service.MailService;
 
 @Component
@@ -42,6 +44,12 @@ public class DemoScheduler {
     // 每 5 分鐘執行一次
     @Scheduled(cron = "0 */5 * * * *")
     public void task2() {
+        Logger logger = Logger.getGlobal();
+        logger.info("start process...");
+        logger.info("start process...");
+        logger.warning("memory is running out...");
+        logger.fine("ignored.");
+        logger.severe("process will be terminated...");
         System.out.println("每5分鐘執行：" + LocalDateTime.now());
     }
 
