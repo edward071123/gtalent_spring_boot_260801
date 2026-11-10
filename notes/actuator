@@ -1,0 +1,130 @@
+# Spring Boot Actuator 教學
+
+## 1. Actuator 是什麼？
+
+Spring Boot Actuator 提供監控與管理端點，可以查看應用程式健康狀態、指標及其他診斷資訊。
+
+例如：
+
+```text
+GET /actuator/health   查看應用程式健康狀態
+GET /actuator/info     查看應用程式資訊
+GET /actuator/metrics  查看可用的監控指標
+```
+
+本專案目前使用 Spring Boot 4.1.0，尚未加入 Actuator。下列內容是教學步驟，並不代表已修改專案。
+
+## 2. 加入 Maven 依賴
+
+在 `pom.xml` 原有的 `<dependencies>` 裡面加入：
+
+```xml
+<!-- Spring Boot Actuator -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-actuator</artifactId>
+</dependency>
+```
+
+這個專案使用 Spring Boot parent 管理版本，所以不用另外填 `<version>`。重新載入 Maven 依賴後，啟動應用程式：
+
+```bash
+./mvnw spring-boot:run
+```
+
+應用仍需要原本的 `.env`、MySQL 和其他必要設定才能啟動。
+
+## 3. 查看健康狀態
+
+啟動後，在另一個終端機執行：
+
+```bash
+curl -i http://localhost:8080/actuator/health
+```
+
+正常時可能得到：
+
+```json
+{"status":"UP"}
+```
+
+`UP` 代表此健康檢查目前判定正常；不代表登入、金流、LINE、Gemini 等每個功能都已實際測試。資料庫等內建健康指標可能影響整體狀態；應用程式若因資料庫無法連線而根本沒有啟動，該端點也不會有回應。
+
+預設健康資訊通常只顯示狀態。完整明細可能包含資料庫等環境資訊；正式環境不應直接公開。
+
+## 4. 暴露其他端點
+
+預設情況只有 `health` 透過 HTTP 暴露。若只在本機學習，可以在本機啟動時額外設定：
+
+```bash
+./mvnw spring-boot:run -Dspring-boot.run.arguments="--management.endpoints.web.exposure.include=health,info,metrics"
+```
+
+重新啟動後可以測試：
+
+```bash
+curl http://localhost:8080/actuator/info
+curl http://localhost:8080/actuator/metrics
+curl http://localhost:8080/actuator/metrics/jvm.memory.used
+```
+
+`/actuator/metrics` 列出指標名稱，特定指標可顯示數值。指標種類會依專案依賴和實際執行狀況而不同。`info` 沒有提供資訊時可能回傳 `{}`，並不一定表示有錯。
+
+**安全提醒：**本專案目前只有 `spring-security-crypto` 和自訂 `AuthInterceptor`，不是完整的 Spring Security 網頁安全設定；目前 interceptor 也沒有保護 `/actuator/**`。將 `info`、`metrics` 等端點暴露到 HTTP 不會自動要求登入。以上用法限於可信任的本機測試，正式環境需確保端點只供授權的管理者或監控系統存取。
+
+## 5. 加入自訂資訊
+
+在 `application.properties` 加入：
+
+```properties
+management.info.env.enabled=true
+info.app.name=gtalent-spring-boot
+info.app.description=Spring Boot Actuator demonstration
+```
+
+在可信任的本機環境暴露 `info` 端點後，重新啟動並執行：
+
+```bash
+curl http://localhost:8080/actuator/info
+```
+
+可能得到：
+
+```json
+{"app":{"name":"gtalent-spring-boot","description":"Spring Boot Actuator demonstration"}}
+```
+
+不要把密碼、API Key、金流金鑰或其他敏感資訊放進 `info.*`。
+
+## 6. EC2 和 Docker 如何使用
+
+目前 `deploy/compose.yml` 把應用的 8080 綁定到 EC2 的 `127.0.0.1:8080`。加入 Actuator、部署新版 JAR 後，可以在 EC2 執行：
+
+```bash
+curl -i http://127.0.0.1:8080/actuator/health
+```
+
+即使 8080 只綁定本機，也要檢查 Nginx 或其他反向代理的路由：如果代理將 `/actuator/**` 轉發出去，外部仍可能訪問。正式環境可只暴露必要端點，並使用反向代理存取限制、網路隔離或完整的 Spring Security 權限設定。不要直接暴露所有端點。
+
+目前 GitHub Actions 使用 `/page/login` 檢查部署。可以在 Actuator 已加入、EC2 確認 `/actuator/health` 符合需求後，再評估改用 health 端點；切換前需確認資料庫等健康狀態對部署判定的影響及回復方式。此文件不會自動修改 workflow。
+
+## 7. 常見問題
+
+- **404**：確認已加入依賴、重新啟動，以及該端點已透過 HTTP 暴露。
+- **連線失敗**：確認 Spring Boot 是否已啟動、port 是否正確；查看應用程式日誌。
+- **503 或 `DOWN`**：查看受保護的詳細健康資訊或伺服器日誌，確認是哪個健康指標失敗。
+- **`info` 是空物件**：可能尚未設定可用資訊，或相應 info contributor 未啟用。
+- **想要 Prometheus**：還需要加入 `micrometer-registry-prometheus`，並設定端點暴露和安全存取；Actuator 本身不會自動安裝 Prometheus 或 Grafana。
+
+## 8. 練習
+
+1. 加入 Actuator 依賴，取得 `/actuator/health` 的狀態。
+2. 僅在本機暴露 `metrics`，查看 JVM 記憶體指標。
+3. 加入非敏感的 `info.app.name`，查看 `/actuator/info`。
+4. 思考：登入頁回應成功，是否代表資料庫及所有外部服務都正常？
+
+## 官方文件
+
+- [Spring Boot Actuator Endpoints](https://docs.spring.io/spring-boot/reference/actuator/endpoints.html)
+- [Spring Boot Metrics API](https://docs.spring.io/spring-boot/api/rest/actuator/metrics.html)
+- [Spring Boot HTTP Monitoring](https://docs.spring.io/spring-boot/reference/actuator/monitoring.html)
